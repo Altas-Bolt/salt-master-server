@@ -3,12 +3,9 @@ import { run as runCommand } from "../utils/runCommand";
 
 const linuxScan = async (_req: Request, res: Response) => {
   try {
-    const { code, stdout, stderr } = await runCommand("sudo", [
-      "salt",
-      "'*'",
-      "cmd.run",
-      "'ps aux'",
-    ]);
+    const { code, stdout, stderr } = await runCommand(
+      `sudo salt '*' cmd.run 'ls -a'`
+    );
 
     return res.status(200).json({
       status: 200,
