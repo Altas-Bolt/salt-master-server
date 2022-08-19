@@ -1,11 +1,9 @@
 import { spawn } from "child_process";
 
-const run = (cmd: string) =>
+const run = (cmd: string, args: string[]) =>
   new Promise<{ code: number | null; stdout: string; stderr: string }>(
     (resolve) => {
-      const cp = spawn("sh");
-
-      cp.stdin.write(`${cmd}\n`);
+      const cp = spawn(cmd, [...args]);
 
       let stdout = Buffer.from("");
       let stderr = Buffer.from("");
