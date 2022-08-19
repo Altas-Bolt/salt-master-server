@@ -3,8 +3,10 @@ import { run as runCommand } from "../utils/runCommand";
 
 const linuxScan = async (_req: Request, res: Response) => {
   try {
+    const ids = "*";
+    const cmd = "ps aux";
     const { code, stdout, stderr } = await runCommand("salt", [
-      "'*' cmd.run 'ps aux'",
+      `${ids} cmd.run ${cmd}`,
     ]);
 
     return res.status(200).json({
