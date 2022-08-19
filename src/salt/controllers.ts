@@ -4,7 +4,7 @@ import { run as runCommand } from "../utils/runCommand";
 const linuxScan = async (_req: Request, res: Response) => {
   try {
     const { code, stdout, stderr } = await runCommand(`echo`, [
-      process.env.SUDO_PASSWORD as string,
+      process.env.SUDO_PASSWORD || "",
       "|",
       "sudo",
       "-S",
