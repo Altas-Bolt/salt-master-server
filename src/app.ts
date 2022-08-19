@@ -6,7 +6,7 @@ import saltRouter from "./salt/routes";
 
 const app = express();
 
-app.use("api/salt", saltRouter);
+app.use("/api/salt", saltRouter);
 
 const port = process.env.PORT || 5000;
 
