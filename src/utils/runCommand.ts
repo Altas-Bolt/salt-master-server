@@ -9,6 +9,7 @@ const run = (cmd: string, args: string[]) =>
       let stderr = Buffer.from("");
 
       cp.stdout.on("data", (data: Buffer) => {
+        console.log(data.toString());
         stdout = Buffer.concat([stdout, data]);
       });
 
