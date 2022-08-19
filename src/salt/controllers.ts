@@ -1,11 +1,23 @@
 import { Request, Response } from "express";
+import { run as runCommand } from "../utils/runCommand";
 
 const linuxScan = async (_req: Request, res: Response) => {
   try {
+    const { code, stdout, stderr } = await runCommand(`echo`, [
+      process.env.SUDO_PASSWORD as string,
+      "|",
+      "sudo",
+      "-S",
+      "salt",
+      "'*'",
+      "cmd.run",
+      "'ps aux'",
+    ]);
+
     return res.status(200).json({
       status: 200,
-      message: "Success",
-      data: null,
+      message: "Linux Scan",
+      data: { code, stdout, stderr },
     });
   } catch (error) {
     console.error("[salt:linuxScan]", error);
