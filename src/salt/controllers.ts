@@ -3,16 +3,9 @@ import { run as runCommand } from "../utils/runCommand";
 
 const linuxScan = async (_req: Request, res: Response) => {
   try {
-    const { code, stdout, stderr } = await runCommand(`echo`, [
-      process.env.SUDO_PASSWORD || "",
-      "|",
-      "sudo",
-      "-S",
-      "salt",
-      "'*'",
-      "cmd.run",
-      "'ps aux'",
-    ]);
+    const { code, stdout, stderr } = await runCommand(
+      `echo ${process.env.PWD} | sudo -S salt '*' cmd.run 'ps aux'`
+    );
 
     return res.status(200).json({
       status: 200,
