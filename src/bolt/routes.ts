@@ -8,6 +8,7 @@ import {
   getAllUsers,
   getMinionById,
   getUserById,
+  loginUser,
 } from "./controllers";
 import { admin, auth } from "./middlewares";
 
@@ -15,6 +16,7 @@ const router = Router();
 
 // User
 router.post("/users/create", createUser);
+router.post("/users/login", loginUser);
 router.get("/users/all", [auth, admin], getAllUsers);
 router.get("/users/:id", [auth, admin], getUserById);
 router.get("/users/admins", [auth, admin], getAllAdmins);

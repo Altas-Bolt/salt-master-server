@@ -26,7 +26,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getMinionById = exports.getAllMinions = exports.addUserToMinion = exports.getAllAdmins = exports.getAllUsers = exports.getUserById = exports.createMinion = exports.createUser = void 0;
+exports.loginUser = exports.getMinionById = exports.getAllMinions = exports.addUserToMinion = exports.getAllAdmins = exports.getAllUsers = exports.getUserById = exports.createMinion = exports.createUser = void 0;
 const error_1 = __importStar(require("./utils/error"));
 const User_model_1 = __importDefault(require("./database/models/User.model"));
 const init_1 = __importDefault(require("./database/init"));
@@ -75,6 +75,55 @@ const createUser = async (req, res) => {
     }
 };
 exports.createUser = createUser;
+const loginUser = async (req, res) => {
+    var _a;
+    try {
+        if (!req.body.email || !req.body.password)
+            throw new error_1.default("Missing Required Fields", error_1.ErrorCodes.BAD_REQUEST);
+        const { data, error } = await init_1.default
+            .from("user")
+            .select("id, email, password")
+            .eq("email", req.body.email);
+        if (!data || error)
+            throw new error_1.default((error === null || error === void 0 ? void 0 : error.message) || `Could not find user with email ${req.body.email}`, error_1.ErrorCodes.BAD_REQUEST);
+        const isValidPassword = await bcrypt_1.default.compare(req.body.password, data[0].password);
+        if (!isValidPassword)
+            throw new error_1.default("Invalid Credentials", error_1.ErrorCodes.UNAUTHORISED);
+        const token = jsonwebtoken_1.default.sign({
+            id: data[0].id,
+            iat: new Date().getTime(),
+            eat: new Date().getTime() + 10 * 365 * 24 * 60 * 60 * 1000,
+        }, config_1.default.JWT_SECRET);
+        const { data: updatedData, error: err } = await init_1.default
+            .from("user")
+            .update({
+            accessToken: token,
+        })
+            .eq("email", req.body.email)
+            .select("id, email, accessToken, role, minionId");
+        if (!updatedData || err)
+            throw new error_1.default((err === null || err === void 0 ? void 0 : err.message) || `Something went wrong`, error_1.ErrorCodes.INTERNAL_SERVER_ERROR);
+        return res.status(200).json({
+            status: 200,
+            data: updatedData[0],
+        });
+    }
+    catch (error) {
+        if (error instanceof error_1.default) {
+            return res.status(error.statusCode).json({
+                status: error.statusCode,
+                message: error.errorMessage,
+            });
+        }
+        else {
+            return res.status(500).json({
+                status: 500,
+                message: (_a = error.message) !== null && _a !== void 0 ? _a : "Something went wrong",
+            });
+        }
+    }
+};
+exports.loginUser = loginUser;
 const getUserById = async (req, res) => {
     var _a;
     try {

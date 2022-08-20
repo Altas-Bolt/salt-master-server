@@ -1,8 +1,8 @@
 import Joi from "joi";
 
 export enum UserRoles {
-  USER = "User",
-  ADMIN = "Admin",
+  USER = "USER",
+  ADMIN = "ADMIN",
 }
 
 export type UserRolesKeys = keyof typeof UserRoles;

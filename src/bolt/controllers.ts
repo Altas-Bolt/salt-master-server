@@ -73,6 +73,75 @@ const createUser = async (
   }
 };
 
+const loginUser = async (
+  req: Request<ParamsDictionary, any, Pick<IUser, "email" | "password">>,
+  res: Response
+) => {
+  try {
+    if (!req.body.email || !req.body.password)
+      throw new APIError("Missing Required Fields", ErrorCodes.BAD_REQUEST);
+
+    const { data, error } = await supabaseClient
+      .from<IUser>("user")
+      .select("id, email, password")
+      .eq("email", req.body.email);
+
+    if (!data || error)
+      throw new APIError(
+        error?.message || `Could not find user with email ${req.body.email}`,
+        ErrorCodes.BAD_REQUEST
+      );
+
+    const isValidPassword = await bcrypt.compare(
+      req.body.password,
+      data[0].password
+    );
+
+    if (!isValidPassword)
+      throw new APIError("Invalid Credentials", ErrorCodes.UNAUTHORISED);
+
+    const token = jwt.sign(
+      {
+        id: data[0].id,
+        iat: new Date().getTime(),
+        eat: new Date().getTime() + 10 * 365 * 24 * 60 * 60 * 1000,
+      },
+      config.JWT_SECRET!
+    );
+
+    const { data: updatedData, error: err } = await supabaseClient
+      .from<IUser>("user")
+      .update({
+        accessToken: token,
+      })
+      .eq("email", req.body.email)
+      .select("id, email, accessToken, role, minionId");
+
+    if (!updatedData || err)
+      throw new APIError(
+        err?.message || `Something went wrong`,
+        ErrorCodes.INTERNAL_SERVER_ERROR
+      );
+
+    return res.status(200).json({
+      status: 200,
+      data: updatedData[0],
+    });
+  } catch (error: any) {
+    if (error instanceof APIError) {
+      return res.status(error.statusCode).json({
+        status: error.statusCode,
+        message: error.errorMessage,
+      });
+    } else {
+      return res.status(500).json({
+        status: 500,
+        message: error.message ?? "Something went wrong",
+      });
+    }
+  }
+};
+
 const getUserById = async (req: Request<{ id: string }>, res: Response) => {
   try {
     const { data, error } = await supabaseClient
@@ -327,4 +396,5 @@ export {
   addUserToMinion,
   getAllMinions,
   getMinionById,
+  loginUser,
 };

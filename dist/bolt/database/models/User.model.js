@@ -7,8 +7,8 @@ exports.UserRoles = void 0;
 const joi_1 = __importDefault(require("joi"));
 var UserRoles;
 (function (UserRoles) {
-    UserRoles["USER"] = "User";
-    UserRoles["ADMIN"] = "Admin";
+    UserRoles["USER"] = "USER";
+    UserRoles["ADMIN"] = "ADMIN";
 })(UserRoles = exports.UserRoles || (exports.UserRoles = {}));
 const User = joi_1.default.object({
     id: joi_1.default.string().required(),
