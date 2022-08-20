@@ -1,13 +1,11 @@
 import { Request, Response } from "express";
-import { run as runCommand } from "../utils/runCommand";
+import { runScan } from "../utils/runCommand";
 
 const linuxScan = async (_req: Request, res: Response) => {
   try {
-    const ids = "*";
-    const cmd = "ps aux";
-    const { code, stdout, stderr } = await runCommand("salt", [
-      `${ids} cmd.run ${cmd}`,
-    ]);
+    const { code, stdout, stderr } = await runScan(
+      `echo ${process.env.PWD || ""} | salt '*' cmd.run 'ls -a'`
+    );
 
     return res.status(200).json({
       status: 200,
