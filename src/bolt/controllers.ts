@@ -293,14 +293,28 @@ const addUserToMinion = async (
   res: Response
 ) => {
   try {
-    const { data, error } = await supabaseClient
-      .from<IMinion>("minion")
-      .update({ userId: req.body.userId })
-      .eq("id", req.params.minionId);
+    const [{ data, error }, { data: userData, error: userError }] =
+      await Promise.all([
+        supabaseClient
+          .from<IMinion>("minion")
+          .update({ userId: req.body.userId })
+          .eq("id", req.params.minionId),
+        supabaseClient
+          .from<IUser>("user")
+          .update({ minionId: req.params.minionId })
+          .eq("id", req.body.userId),
+      ]);
 
     if (error || !data)
       throw new APIError(
-        error.message ||
+        error?.message ||
+          `Could not add user ${req.body.userId} to minion with id ${req.params.minionId}`,
+        ErrorCodes.BAD_REQUEST
+      );
+
+    if (userError || !userData)
+      throw new APIError(
+        userError?.message ||
           `Could not add user ${req.body.userId} to minion with id ${req.params.minionId}`,
         ErrorCodes.BAD_REQUEST
       );

@@ -251,12 +251,21 @@ exports.createMinion = createMinion;
 const addUserToMinion = async (req, res) => {
     var _a;
     try {
-        const { data, error } = await init_1.default
-            .from("minion")
-            .update({ userId: req.body.userId })
-            .eq("id", req.params.minionId);
+        const [{ data, error }, { data: userData, error: userError }] = await Promise.all([
+            init_1.default
+                .from("minion")
+                .update({ userId: req.body.userId })
+                .eq("id", req.params.minionId),
+            init_1.default
+                .from("user")
+                .update({ minionId: req.params.minionId })
+                .eq("id", req.body.userId),
+        ]);
         if (error || !data)
-            throw new error_1.default(error.message ||
+            throw new error_1.default((error === null || error === void 0 ? void 0 : error.message) ||
+                `Could not add user ${req.body.userId} to minion with id ${req.params.minionId}`, error_1.ErrorCodes.BAD_REQUEST);
+        if (userError || !userData)
+            throw new error_1.default((userError === null || userError === void 0 ? void 0 : userError.message) ||
                 `Could not add user ${req.body.userId} to minion with id ${req.params.minionId}`, error_1.ErrorCodes.BAD_REQUEST);
         return res.status(200).json({
             status: 200,
