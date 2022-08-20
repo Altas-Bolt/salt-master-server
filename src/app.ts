@@ -1,5 +1,6 @@
 import path from "path";
 import { config } from "dotenv";
+import cors from "cors";
 config({
   path: path.resolve(__dirname, "../", ".env"),
 });
@@ -13,6 +14,7 @@ console.log(path.resolve(__dirname, "../", ".env"));
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 
 app.use("/bolt", router);
