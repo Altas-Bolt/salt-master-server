@@ -5,7 +5,7 @@ import { runCmd } from "./utils/runCommand";
 const linuxScan = async (_req: Request, res: Response) => {
   try {
     const output = await runCmd(
-      `echo ${process.env.PWD || ""} | salt '*' cmd.run 'ls -a'`
+      `echo ${process.env.PASSWORD || ""} | sudo -S salt '*' cmd.run 'ls -a'`
     );
 
     const result = parseLinuxScanOp(output.trim());
