@@ -86,7 +86,7 @@ const loginUser = async (
       .select("id, email, password")
       .eq("email", req.body.email);
 
-    if (!data || error)
+    if (!data?.length || error)
       throw new APIError(
         error?.message || `Could not find user with email ${req.body.email}`,
         ErrorCodes.BAD_REQUEST
