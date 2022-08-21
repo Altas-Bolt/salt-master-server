@@ -1,7 +1,7 @@
 import { CreateNewScanDTO } from "../dto";
 import supabase from "../../bolt/database/init";
 import { TablesEnum } from "../../global.enum";
-import { IScanTable } from "src/bolt/database/db.interface";
+import { IScanTable } from "../../bolt/database/db.interface";
 
 export const createNewScan = async (
   data: CreateNewScanDTO

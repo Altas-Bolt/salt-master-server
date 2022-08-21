@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { parseLinuxScanOp } from "./utils/parseLinuxScan";
 import { runCmd } from "./utils/runCommand";
 import { createNewScan } from "./utils/createNewScan";
-import { FlagEnum, OSEnum } from "src/global.enum";
+import { FlagEnum, OSEnum } from "../global.enum";
 import { getSoftwaresForMinion } from "./utils/getSoftwaresForMinion";
 import { AddNewScanMinionSoftwareEntryDTO } from "./dto";
 import { addNewSoftware } from "./utils/addNewSoftware";

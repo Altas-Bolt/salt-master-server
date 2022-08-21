@@ -1,4 +1,4 @@
-import { FlagEnum, OSEnum } from "src/global.enum";
+import { FlagEnum, OSEnum } from "../global.enum";
 
 export type CreateNewScanDTO = {
   os: OSEnum;
