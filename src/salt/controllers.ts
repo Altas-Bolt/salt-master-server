@@ -42,7 +42,7 @@ const linuxScan = async (req: Request, res: Response) => {
         if (softwaresForMinionIdInDb[softwareName]) {
           softwareId = softwaresForMinionIdInDb[softwareName].id;
         } else {
-          const [{ id }, ..._rest] = await addNewSoftware({
+          const [{ id }, ..._] = await addNewSoftware({
             name: softwareName.trim(),
             flag: FlagEnum.UNDECIDED,
             minionId: minionId.trim(),

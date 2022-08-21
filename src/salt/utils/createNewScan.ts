@@ -16,8 +16,8 @@ export const createNewScan = async (
       },
     ]);
 
-  if (error) {
-    return Promise.reject(error);
+  if (error || !newScan) {
+    return Promise.reject(error || "Failed to create new scan");
   }
 
   return newScan[0];

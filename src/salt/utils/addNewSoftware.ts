@@ -15,8 +15,8 @@ export const addNewSoftware = async (data: AddNewSoftwareDTO) => {
       },
     ]);
 
-  if (error) {
-    return Promise.reject(error);
+  if (error || !newSoftware) {
+    return Promise.reject(error || "Failed to add new software");
   }
 
   return newSoftware;

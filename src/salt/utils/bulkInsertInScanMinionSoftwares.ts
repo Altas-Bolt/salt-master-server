@@ -14,5 +14,9 @@ export const bulkInsertInScanMinionSoftwares = async (
     return Promise.reject(error);
   }
 
-  return data.map((entry) => entry.id);
+  if (data) {
+    return data.map((entry) => entry.id);
+  } else {
+    return [];
+  }
 };

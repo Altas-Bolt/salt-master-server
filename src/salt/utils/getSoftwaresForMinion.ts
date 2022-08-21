@@ -26,8 +26,8 @@ export const getSoftwaresForMinion = async (minionId: string) => {
     .select()
     .eq("minion_id", minion.id);
 
-  if (errorInFindingSoftwares) {
-    return Promise.reject(errorInFindingSoftwares);
+  if (errorInFindingSoftwares || !softwares) {
+    return Promise.reject(errorInFindingSoftwares || "Softwares not found");
   }
 
   const softwaresMap: Record<string, { id: string; flag: FlagEnum }> = {};
