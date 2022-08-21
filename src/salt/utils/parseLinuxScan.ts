@@ -14,7 +14,7 @@ const parseLinuxScanOp = (str: string) => {
     }
   }
 
-  console.log({ result });
+  return result;
 };
 
 export { parseLinuxScanOp };

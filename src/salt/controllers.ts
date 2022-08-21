@@ -9,7 +9,6 @@ const linuxScan = async (_req: Request, res: Response) => {
     );
 
     const result = parseLinuxScanOp(output.trim());
-    console.log({ result });
 
     return res.status(200).json({
       status: 200,
