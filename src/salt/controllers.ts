@@ -90,9 +90,9 @@ const linuxScan = async (req: Request, res: Response) => {
 const runCommand = async (req: Request, res: Response) => {
   try {
     const output = await runCmd(
-      `echo ${process.env.PASSWORD || ""} | sudo -S salt ${
+      `echo ${process.env.PASSWORD || ""} | sudo -S salt '${
         req.body.saltIds ? req.body.saltIds.join(",") : "*"
-      } cmd.run ${req.body.cmd}`
+      }' cmd.run '${req.body.cmd}'`
     );
 
     const result = parseLinuxScanOp(output);
