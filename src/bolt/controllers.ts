@@ -49,7 +49,7 @@ const createUser = async (
 
     if (error || !data)
       throw new APIError(
-        error.message ||
+        error?.message ||
           `Could not create user with email ${validatedBody.value.email}`,
         ErrorCodes.BAD_REQUEST
       );
@@ -151,7 +151,7 @@ const getUserById = async (req: Request<{ id: string }>, res: Response) => {
 
     if (!data || error)
       throw new APIError(
-        error.message || `Could not find user with id ${req.params.id}`,
+        error?.message || `Could not find user with id ${req.params.id}`,
         ErrorCodes.NOT_FOUND
       );
 
@@ -183,7 +183,7 @@ const getAllUsers = async (_req: Request, res: Response) => {
 
     if (!data || error)
       throw new APIError(
-        error.message || "Could not find users",
+        error?.message || "Could not find users",
         ErrorCodes.NOT_FOUND
       );
 
@@ -215,7 +215,7 @@ const getAllAdmins = async (_req: Request, res: Response) => {
 
     if (!data || error)
       throw new APIError(
-        error.message || "Could not find users",
+        error?.message || "Could not find users",
         ErrorCodes.NOT_FOUND
       );
 
@@ -264,7 +264,7 @@ const createMinion = async (
 
     if (error || !data)
       throw new APIError(
-        error.message ||
+        error?.message ||
           `Could not create minion with id ${validatedBody.value.id}`,
         ErrorCodes.BAD_REQUEST
       );
@@ -346,7 +346,7 @@ const getAllMinions = async (_req: Request, res: Response) => {
 
     if (error || !data)
       throw new APIError(
-        error.message || `Could not find minions`,
+        error?.message || `Could not find minions`,
         ErrorCodes.NOT_FOUND
       );
 
@@ -378,7 +378,7 @@ const getMinionById = async (req: Request<{ id: string }>, res: Response) => {
 
     if (error || !data)
       throw new APIError(
-        error.message || `Could not find minion with id ${req.params.id}`,
+        error?.message || `Could not find minion with id ${req.params.id}`,
         ErrorCodes.NOT_FOUND
       );
 
