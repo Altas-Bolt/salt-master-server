@@ -1,22 +1,8 @@
 import Joi from "joi";
+import { UserRoles } from "../../../global.enum";
+import { IUserTable } from "../db.interface";
 
-export enum UserRoles {
-  USER = "USER",
-  ADMIN = "ADMIN",
-}
-
-export type UserRolesKeys = keyof typeof UserRoles;
-
-export interface IUser {
-  id: string;
-  email: string;
-  password: string;
-  accessToken?: string;
-  role: UserRolesKeys;
-  minionId?: string;
-}
-
-const User = Joi.object<IUser>({
+const User = Joi.object<IUserTable>({
   id: Joi.string().required(),
   email: Joi.string().email().trim().required(),
   password: Joi.string().required(),

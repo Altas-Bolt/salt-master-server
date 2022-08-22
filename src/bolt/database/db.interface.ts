@@ -1,4 +1,13 @@
-import { FlagEnum, OSEnum } from "../../global.enum";
+import { FlagEnum, OSEnum, UserRolesKeys } from "../../global.enum";
+
+export interface IUserTable {
+  id: string;
+  email: string;
+  password: string;
+  accessToken?: string;
+  role: UserRolesKeys;
+  minionId?: string;
+}
 
 export interface IScanTable {
   id: string;
@@ -12,7 +21,7 @@ export interface IMinionTable {
   id: string;
   os: OSEnum;
   ip: string;
-  userId: string;
+  userId: string | null;
   createdBy: string;
   saltId: string;
 }
