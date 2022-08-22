@@ -5,8 +5,10 @@ import {
   createUser,
   getAllAdmins,
   getAllMinions,
+  getAllScans,
   getAllUsers,
   getMinionById,
+  getScanInfo,
   getUserById,
   loginUser,
 } from "./controllers";
@@ -26,5 +28,9 @@ router.post("/minions/create", [auth, admin], createMinion);
 router.get("/minions/all", [auth, admin], getAllMinions);
 router.get("/minions/:id", [auth, admin], getMinionById);
 router.put("/minions/add-user/:minionId", [auth, admin], addUserToMinion);
+
+// Scan
+router.get("/scans/all", [auth, admin], getAllScans);
+router.post("/scans/info", [auth, admin], getScanInfo);
 
 export default router;
