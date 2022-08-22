@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { ParamsDictionary } from "express-serve-static-core";
 import { parseLinuxScanOp } from "./utils/parseLinuxScan";
 import { runCmd } from "./utils/runCommand";
 import { createNewScan } from "./utils/createNewScan";
@@ -7,6 +8,13 @@ import { getSoftwaresForMinion } from "./utils/getSoftwaresForMinion";
 import { AddNewScanMinionSoftwareEntryDTO } from "./dto";
 import { addNewSoftware } from "./utils/addNewSoftware";
 import { bulkInsertInScanMinionSoftwares } from "./utils/bulkInsertInScanMinionSoftwares";
+import {
+  acceptAllMinionKeys,
+  acceptMinionKey,
+  getSaltMinionKeys,
+  rejectAllMinionKeys,
+  rejectMinionKey,
+} from "./utils/saltKeyHelpers";
 
 const linuxScan = async (req: Request, res: Response) => {
   try {
@@ -75,4 +83,85 @@ const linuxScan = async (req: Request, res: Response) => {
   }
 };
 
-export { linuxScan };
+const getSaltMinionKeysController = async (_req: Request, res: Response) => {
+  try {
+    const resp = await getSaltMinionKeys();
+
+    return res.status(200).json({
+      status: 200,
+      data: resp,
+    });
+  } catch (error) {
+    console.error("[salt:getSaltMinionKeys]", error);
+    return res.status(400).json({
+      status: 400,
+      message: "Error fetching keys",
+      data: null,
+    });
+  }
+};
+
+const acceptMinionKeysController = async (
+  req: Request<ParamsDictionary, any, { keys: "all" | string[] }>,
+  res: Response
+) => {
+  try {
+    if (req.body.keys === "all") {
+      await acceptAllMinionKeys();
+    } else {
+      const promiseArr: Array<Promise<void>> = req.body.keys.map((key) =>
+        acceptMinionKey(key)
+      );
+
+      await Promise.all(promiseArr);
+    }
+
+    return res.status(200).json({
+      status: 200,
+      message: "Keys accepted",
+    });
+  } catch (error) {
+    console.error("[salt:acceptMinionKeysController]", error);
+    return res.status(400).json({
+      status: 400,
+      message: "Error accepting keys",
+      data: null,
+    });
+  }
+};
+
+const rejectMinionKeysController = async (
+  req: Request<ParamsDictionary, any, { keys: "all" | string[] }>,
+  res: Response
+) => {
+  try {
+    if (req.body.keys === "all") {
+      await rejectAllMinionKeys();
+    } else {
+      const promiseArr: Array<Promise<void>> = req.body.keys.map((key) =>
+        rejectMinionKey(key)
+      );
+
+      await Promise.all(promiseArr);
+    }
+
+    return res.status(200).json({
+      status: 200,
+      message: "Keys rejected",
+    });
+  } catch (error) {
+    console.error("[salt:rejectMinionKeysController]", error);
+    return res.status(400).json({
+      status: 400,
+      message: "Error accepting keys",
+      data: null,
+    });
+  }
+};
+
+export {
+  linuxScan,
+  getSaltMinionKeysController,
+  acceptMinionKeysController,
+  rejectMinionKeysController,
+};
