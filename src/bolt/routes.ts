@@ -30,7 +30,7 @@ router.get("/minions/:id", [auth, admin], getMinionById);
 router.put("/minions/add-user/:minionId", [auth, admin], addUserToMinion);
 
 // Scan
-router.get("/scans/all", [auth, admin], getAllScans);
-router.post("/scans/info", [auth, admin], getScanInfo);
+router.get("/scans/all", getAllScans);
+router.post("/scans/info", getScanInfo);
 
 export default router;
