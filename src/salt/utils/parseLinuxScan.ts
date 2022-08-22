@@ -5,7 +5,11 @@ const parseLinuxScanOp = (str: string) => {
   let error: string | null = null;
 
   for (const line of lines) {
-    if (error) {
+    if (/^[\w\d]+/g.test(line)) {
+      error = null;
+      currentMinionId = line.trim().slice(0, -1);
+      result[currentMinionId] = [];
+    } else if (error) {
       continue;
     } else {
       if (/^[\w\d]+/g.test(line)) {
