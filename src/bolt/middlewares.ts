@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import supabaseClient from "./database/init";
 import jwt from "jsonwebtoken";
 import config from "../config";
-import { IUser } from "./database/models/User.model";
+import { IUserTable } from "./database/db.interface";
 
 export const auth = async (req: Request, res: Response, next: NextFunction) => {
   let token = req.headers["authorization"] as string;
@@ -39,7 +39,7 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
   }
 
   const { data, error } = await supabaseClient
-    .from<IUser>("user")
+    .from<IUserTable>("user")
     .select("id, email, role, minionId")
     .eq("id", id as string);
 
@@ -59,7 +59,7 @@ export const admin = async (
   res: Response,
   next: NextFunction
 ) => {
-  const user = (req as any).user as IUser;
+  const user = (req as any).user as IUserTable;
   if (!user)
     return res.status(400).json({
       status: 400,

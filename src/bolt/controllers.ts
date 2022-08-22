@@ -1,17 +1,20 @@
 import { Request, Response } from "express";
 import APIError, { ErrorCodes } from "./utils/error";
-import User, { IUser } from "./database/models/User.model";
+import User from "./database/models/User.model";
 import { ParamsDictionary } from "express-serve-static-core";
 import supabaseClient from "./database/init";
-import Minion, { IMinion } from "./database/models/Minion.model";
+import Minion from "./database/models/Minion.model";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import config from "../config";
 import { uuid } from "uuidv4";
+import { TablesEnum } from "../global.enum";
+import { IMinionTable, IUserTable } from "./database/db.interface";
+import { ChangePasswordDTO } from "./dto";
 
 // ------ User -------
 const createUser = async (
-  req: Request<ParamsDictionary, any, IUser>,
+  req: Request<ParamsDictionary, any, IUserTable>,
   res: Response
 ) => {
   try {
@@ -35,7 +38,7 @@ const createUser = async (
     const hashedPassword = await bcrypt.hash(validatedBody.value.password, 10);
 
     const { data, error } = await supabaseClient
-      .from<IUser>("user")
+      .from<IUserTable>(TablesEnum.USER)
       .upsert(
         {
           ...validatedBody.value,
@@ -74,7 +77,7 @@ const createUser = async (
 };
 
 const loginUser = async (
-  req: Request<ParamsDictionary, any, Pick<IUser, "email" | "password">>,
+  req: Request<ParamsDictionary, any, Pick<IUserTable, "email" | "password">>,
   res: Response
 ) => {
   try {
@@ -82,7 +85,7 @@ const loginUser = async (
       throw new APIError("Missing Required Fields", ErrorCodes.BAD_REQUEST);
 
     const { data, error } = await supabaseClient
-      .from<IUser>("user")
+      .from<IUserTable>(TablesEnum.USER)
       .select("id, email, password")
       .eq("email", req.body.email);
 
@@ -110,7 +113,7 @@ const loginUser = async (
     );
 
     const { data: updatedData, error: err } = await supabaseClient
-      .from<IUser>("user")
+      .from<IUserTable>(TablesEnum.USER)
       .update({
         accessToken: token,
       })
@@ -142,10 +145,81 @@ const loginUser = async (
   }
 };
 
+const changePassword = async (
+  req: Request<ParamsDictionary, any, ChangePasswordDTO>,
+  res: Response
+) => {
+  try {
+    const user = (req as any).user as IUserTable;
+
+    const { data: userData, error: userError } = await supabaseClient
+      .from<IUserTable>(TablesEnum.USER)
+      .select("password")
+      .eq("id", user.id);
+
+    if (!userData?.length || userError)
+      throw new APIError(
+        userError?.message || "Could not find user",
+        ErrorCodes.NOT_FOUND
+      );
+
+    const isValidPassword = await bcrypt.compare(
+      req.body.oldPassword,
+      userData[0].password
+    );
+
+    if (!isValidPassword)
+      throw new APIError("Invalid Credentials", ErrorCodes.UNAUTHORISED);
+
+    const newHashedPassword = await bcrypt.hash(req.body.newPassword, 10);
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        iat: new Date().getTime(),
+        eat: new Date().getTime() + 10 * 365 * 24 * 60 * 60 * 1000,
+      },
+      config.JWT_SECRET!
+    );
+
+    const { data, error } = await supabaseClient
+      .from<IUserTable>(TablesEnum.USER)
+      .update({
+        password: newHashedPassword,
+        accessToken: token,
+      })
+      .eq("id", user.id)
+      .select("id, email, accessToken, role, minionId");
+
+    if (!data?.length || error)
+      throw new APIError(
+        error?.message || `Could not update password`,
+        ErrorCodes.BAD_REQUEST
+      );
+
+    return res.status(200).json({
+      status: 200,
+      data: data[0],
+    });
+  } catch (error: any) {
+    if (error instanceof APIError) {
+      return res.status(error.statusCode).json({
+        status: error.statusCode,
+        message: error.errorMessage,
+      });
+    } else {
+      return res.status(500).json({
+        status: 500,
+        message: error.message ?? "Something went wrong",
+      });
+    }
+  }
+};
+
 const getUserById = async (req: Request<{ id: string }>, res: Response) => {
   try {
     const { data, error } = await supabaseClient
-      .from<IUser>("user")
+      .from<IUserTable>(TablesEnum.USER)
       .select("id, email, accessToken, role, minionId")
       .eq("id", req.params.id);
 
@@ -177,7 +251,7 @@ const getUserById = async (req: Request<{ id: string }>, res: Response) => {
 const getAllUsers = async (_req: Request, res: Response) => {
   try {
     const { data, error } = await supabaseClient
-      .from<IUser>("user")
+      .from<IUserTable>(TablesEnum.USER)
       .select("id, email, accessToken, role, minionId")
       .eq("role", "USER");
 
@@ -209,7 +283,7 @@ const getAllUsers = async (_req: Request, res: Response) => {
 const getAllAdmins = async (_req: Request, res: Response) => {
   try {
     const { data, error } = await supabaseClient
-      .from<IUser>("user")
+      .from<IUserTable>(TablesEnum.USER)
       .select("id, email, accessToken, role, minionId")
       .eq("role", "Admin");
 
@@ -240,11 +314,11 @@ const getAllAdmins = async (_req: Request, res: Response) => {
 
 // ---- Minion ----
 const createMinion = async (
-  req: Request<ParamsDictionary, any, IMinion>,
+  req: Request<ParamsDictionary, any, IMinionTable>,
   res: Response
 ) => {
   try {
-    const user = (req as any).user as IUser;
+    const user = (req as any).user as IUserTable;
 
     const validatedBody = Minion.validate({
       ...req.body,
@@ -259,7 +333,7 @@ const createMinion = async (
       );
 
     const { data, error } = await supabaseClient
-      .from<IMinion>("minion")
+      .from<IMinionTable>(TablesEnum.MINION)
       .upsert(validatedBody.value, { onConflict: "id" });
 
     if (error || !data)
@@ -296,11 +370,11 @@ const addUserToMinion = async (
     const [{ data, error }, { data: userData, error: userError }] =
       await Promise.all([
         supabaseClient
-          .from<IMinion>("minion")
+          .from<IMinionTable>(TablesEnum.MINION)
           .update({ userId: req.body.userId })
           .eq("id", req.params.minionId),
         supabaseClient
-          .from<IUser>("user")
+          .from<IUserTable>("user")
           .update({ minionId: req.params.minionId })
           .eq("id", req.body.userId),
       ]);
@@ -341,7 +415,7 @@ const addUserToMinion = async (
 const getAllMinions = async (_req: Request, res: Response) => {
   try {
     const { data, error } = await supabaseClient
-      .from<IMinion>("minion")
+      .from<IMinionTable>(TablesEnum.MINION)
       .select();
 
     if (error || !data)
@@ -372,7 +446,7 @@ const getAllMinions = async (_req: Request, res: Response) => {
 const getMinionById = async (req: Request<{ id: string }>, res: Response) => {
   try {
     const { data, error } = await supabaseClient
-      .from<IMinion>("minion")
+      .from<IMinionTable>(TablesEnum.MINION)
       .select()
       .eq("id", req.params.id);
 
@@ -401,6 +475,39 @@ const getMinionById = async (req: Request<{ id: string }>, res: Response) => {
   }
 };
 
+const getUnassignedMinions = async (_req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabaseClient
+      .from<IMinionTable>(TablesEnum.MINION)
+      .select("id, saltId")
+      .is("userId", null);
+
+    if (error || !data) {
+      throw new APIError(
+        error?.message || "Failed to fetch unassigned minions",
+        ErrorCodes.BAD_REQUEST
+      );
+    }
+
+    return res.status(200).json({
+      status: 200,
+      data,
+    });
+  } catch (error: any) {
+    if (error instanceof APIError) {
+      return res.status(error.statusCode).json({
+        status: error.statusCode,
+        message: error.errorMessage,
+      });
+    } else {
+      return res.status(500).json({
+        status: 500,
+        message: error.message ?? "Something went wrong",
+      });
+    }
+  }
+};
+
 export {
   createUser,
   createMinion,
@@ -411,4 +518,6 @@ export {
   getAllMinions,
   getMinionById,
   loginUser,
+  getUnassignedMinions,
+  changePassword,
 };

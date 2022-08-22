@@ -3,6 +3,7 @@ export enum TablesEnum {
   MINION = "minion",
   SOFTWARES = "softwares",
   SCAN_MINION_SOFTWARES = "scan-minion-softwares",
+  USER = "user",
 }
 
 export enum OSEnum {
@@ -15,3 +16,10 @@ export enum FlagEnum {
   WHITELISTED = "whitelisted",
   UNDECIDED = "undecided",
 }
+
+export enum UserRoles {
+  USER = "USER",
+  ADMIN = "ADMIN",
+}
+
+export type UserRolesKeys = keyof typeof UserRoles;
