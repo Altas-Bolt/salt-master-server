@@ -28,31 +28,29 @@ const linuxScan = async (req: Request, res: Response) => {
 
     const insertValues: AddNewScanMinionSoftwareEntryDTO[] = [];
 
-    for (const minionId in minionIdToSoftwareNameMap) {
-      const softwaresForMinionIdInDb = await getSoftwaresForMinion(
-        minionId.trim()
-      );
-      if (!softwaresForMinionIdInDb) {
+    for (const saltId in minionIdToSoftwareNameMap) {
+      const minionSoftwareMap = await getSoftwaresForMinion(saltId.trim());
+      if (!minionSoftwareMap) {
         console.log("Minion not found in DB");
         continue;
       }
 
-      for (const softwareName of minionIdToSoftwareNameMap[minionId]) {
+      for (const softwareName of minionIdToSoftwareNameMap[saltId]) {
         let softwareId: string | null = null;
-        if (softwaresForMinionIdInDb[softwareName]) {
-          softwareId = softwaresForMinionIdInDb[softwareName].id;
+        if (minionSoftwareMap.softwares[softwareName]) {
+          softwareId = minionSoftwareMap.softwares[softwareName].id;
         } else {
           const [{ id }, ..._] = await addNewSoftware({
             name: softwareName.trim(),
             flag: FlagEnum.UNDECIDED,
-            minionId: minionId.trim(),
+            minionId: minionSoftwareMap.id.trim(),
           });
 
           softwareId = id;
         }
 
         insertValues.push({
-          minion_id: minionId.trim(),
+          minion_id: minionSoftwareMap.id.trim(),
           scan_id: newScan.id,
           software_id: softwareId,
           ran_at: ranAt,

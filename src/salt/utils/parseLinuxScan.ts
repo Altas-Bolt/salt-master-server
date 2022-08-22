@@ -5,7 +5,7 @@ const parseLinuxScanOp = (str: string) => {
 
   for (const line of lines) {
     if (/^[\w\d]+/g.test(line)) {
-      currentMinionId = line.trim();
+      currentMinionId = line.trim().slice(0, -1);
       result[currentMinionId] = [];
     }
 

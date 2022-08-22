@@ -5,11 +5,11 @@ import {
 } from "../../bolt/database/db.interface";
 import supabase from "../../bolt/database/init";
 
-export const getSoftwaresForMinion = async (minionId: string) => {
+export const getSoftwaresForMinion = async (saltId: string) => {
   const { data: minions, error: errorInFindingMinion } = await supabase
     .from<IMinionTable>(TablesEnum.MINION)
     .select("id")
-    .eq("saltId", minionId.trim());
+    .eq("saltId", saltId.trim());
 
   if (errorInFindingMinion) {
     return Promise.reject(errorInFindingMinion);
@@ -39,5 +39,5 @@ export const getSoftwaresForMinion = async (minionId: string) => {
     };
   });
 
-  return softwaresMap;
+  return { id: minion.id, softwares: softwaresMap };
 };
