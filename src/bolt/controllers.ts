@@ -404,7 +404,7 @@ const getMinionById = async (req: Request<{ id: string }>, res: Response) => {
 };
 
 // ---- Scans ----
-const getAllScans = async (req: Request, res: Response) => {
+const getAllScans = async (_req: Request, res: Response) => {
   try {
     const { data, error } = await supabaseClient
       .from<IScanTable>(TablesEnum.SCAN)
