@@ -87,4 +87,29 @@ const linuxScan = async (req: Request, res: Response) => {
   }
 };
 
-export { linuxScan };
+const runCommand = async (req: Request, res: Response) => {
+  try {
+    const output = await runCmd(
+      `echo ${process.env.PASSWORD || ""} | sudo -S salt ${
+        req.body.saltIds ? req.body.saltIds.join(",") : "*"
+      } cmd.run ${req.body.cmd}`
+    );
+
+    const result = parseLinuxScanOp(output);
+
+    return res.status(200).json({
+      status: 200,
+      message: "Scan successfull",
+      data: result,
+    });
+  } catch (error) {
+    console.error("[salt:runCommand]", error);
+    return res.status(400).json({
+      status: 400,
+      message: "Error occured on remote execution",
+      data: null,
+    });
+  }
+};
+
+export { linuxScan, runCommand };
