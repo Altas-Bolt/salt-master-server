@@ -15,7 +15,7 @@ export const getSoftwaresForMinion = async (minionId: string) => {
     return Promise.reject(errorInFindingMinion);
   }
 
-  if (!minions || minions.length < 0) {
+  if (!minions || minions.length <= 0) {
     return null;
   }
 

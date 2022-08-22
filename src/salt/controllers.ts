@@ -13,7 +13,7 @@ const linuxScan = async (req: Request, res: Response) => {
     const output = await runCmd(
       `echo ${
         process.env.PASSWORD || ""
-      } | sudo -S salt '*' cmd.run 'node /etc/bolt/getApps.js'`
+      } | sudo -S salt 'red-hat-minion' cmd.run 'ls /usr/share'`
     );
 
     const ranAt = new Date();
