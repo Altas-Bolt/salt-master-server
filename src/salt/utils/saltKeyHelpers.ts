@@ -4,6 +4,7 @@ export interface ISaltMinionKeysOutput {
   acceptedKeys: string[];
   rejectedKeys: string[];
   unacceptedKeys: string[];
+  deniedKeys: string[];
 }
 
 const getSaltMinionKeys = async (): Promise<ISaltMinionKeysOutput> => {
@@ -11,6 +12,7 @@ const getSaltMinionKeys = async (): Promise<ISaltMinionKeysOutput> => {
     const response = await runCmd(
       `echo ${process.env.PASSWORD || ""} | sudo -S salt-key`
     );
+    console.log(response);
 
     const lines = response.split("\n");
 
@@ -18,16 +20,20 @@ const getSaltMinionKeys = async (): Promise<ISaltMinionKeysOutput> => {
       acceptedKeys: [],
       rejectedKeys: [],
       unacceptedKeys: [],
+      deniedKeys: [],
     };
 
     let flag = "";
 
     for (const line of lines) {
       // if the line is a key, return the key
+      if (line === "") continue;
+
       if (
         line === "Accepted Keys:" ||
         line === "Rejected Keys:" ||
-        line === "Unaccepted Keys:"
+        line === "Unaccepted Keys:" ||
+        line === "Denied Keys:"
       ) {
         flag = line;
       } else if (flag === "Accepted Keys:") {
@@ -36,6 +42,8 @@ const getSaltMinionKeys = async (): Promise<ISaltMinionKeysOutput> => {
         keys.rejectedKeys.push(line);
       } else if (flag === "Unaccepted Keys:") {
         keys.unacceptedKeys.push(line);
+      } else if (flag === "Denied Keys:") {
+        keys.deniedKeys.push(line);
       }
     }
 
