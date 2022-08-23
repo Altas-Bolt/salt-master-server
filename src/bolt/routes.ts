@@ -22,9 +22,9 @@ const router = Router();
 router.post("/users/create", createUser);
 router.post("/users/login", loginUser);
 router.get("/users/all", [auth, admin], getAllUsers);
+router.put("/users/change-password", [auth], changePassword);
 router.get("/users/:id", [auth, admin], getUserById);
 router.get("/users/admins", [auth, admin], getAllAdmins);
-router.put("/users/change-password", [auth], changePassword);
 
 // Minions
 router.post("/minions/create", [auth, admin], createMinion);
