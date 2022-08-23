@@ -57,9 +57,8 @@ const getSaltMinionKeys = async (): Promise<ISaltMinionKeysOutput> => {
 const acceptMinionKey = async (minionId: string) => {
   try {
     await runCmd(
-      `echo ${process.env.PASSWORD} | sudo -S salt-key -a ${minionId}`
+      `echo ${process.env.PASSWORD} | echo Y | sudo -S salt-key -a ${minionId}`
     );
-
     return;
   } catch (err: any) {
     console.log(
@@ -71,7 +70,7 @@ const acceptMinionKey = async (minionId: string) => {
 
 const acceptAllMinionKeys = async () => {
   try {
-    await runCmd(`echo ${process.env.PASSWORD} | sudo -S salt-key -A`);
+    await runCmd(`echo ${process.env.PASSWORD} | echo Y | sudo -S salt-key -A`);
 
     return;
   } catch (err: any) {
@@ -85,7 +84,7 @@ const acceptAllMinionKeys = async () => {
 const rejectMinionKey = async (minionId: string) => {
   try {
     await runCmd(
-      `echo ${process.env.PASSWORD} | sudo -S salt-key -r ${minionId}`
+      `echo ${process.env.PASSWORD} | echo Y  | sudo -S salt-key -r ${minionId}`
     );
 
     return;
