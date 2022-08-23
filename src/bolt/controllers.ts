@@ -9,7 +9,12 @@ import bcrypt from "bcrypt";
 import config from "../config";
 import { uuid } from "uuidv4";
 import { TablesEnum } from "../global.enum";
-import { IMinionTable, IUserTable } from "./database/db.interface";
+import {
+  IMinionTable,
+  IUserTable,
+  IScanMinionSoftwaresTable,
+  IScanTable,
+} from "./database/db.interface";
 import { ChangePasswordDTO } from "./dto";
 
 // ------ User -------
@@ -508,6 +513,80 @@ const getUnassignedMinions = async (_req: Request, res: Response) => {
   }
 };
 
+// ---- Scans ----
+const getAllScans = async (_req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabaseClient
+      .from<IScanTable>(TablesEnum.SCAN)
+      .select()
+      .order("ran_at", { ascending: false });
+
+    if (error || !data)
+      throw new APIError(
+        error?.message || `Could not find scans in DB`,
+        ErrorCodes.NOT_FOUND
+      );
+
+    return res.status(200).json({
+      status: 200,
+      data: data,
+    });
+  } catch (error: any) {
+    if (error instanceof APIError) {
+      return res.status(error.statusCode).json({
+        status: error.statusCode,
+        message: error.errorMessage,
+      });
+    } else {
+      return res.status(500).json({
+        status: 500,
+        message: error.message ?? "Something went wrong",
+      });
+    }
+  }
+};
+
+const getScanInfo = async (req: Request, res: Response) => {
+  try {
+    const { data, error } = req.body.minionId
+      ? await supabaseClient
+          .from<IScanMinionSoftwaresTable>(TablesEnum.SCAN_MINION_SOFTWARES)
+          .select(`id, flag, software:software_id (id, name, flag)`)
+          .eq("scan_id", req.body.scanId.trim())
+          .eq("minion_id", req.body.minionId.trim())
+      : await supabaseClient
+          .from<IScanMinionSoftwaresTable>(TablesEnum.SCAN_MINION_SOFTWARES)
+          .select(
+            `id, flag, software:software_id (id, name, flag), minion:minion_id (id, saltId)`
+          )
+          .eq("scan_id", req.body.scanId.trim());
+
+    if (error || !data)
+      throw new APIError(
+        error?.message ||
+          `Could not find entries in 'scan-minion-software' table for scan_id = ${req.body.scanId}`,
+        ErrorCodes.NOT_FOUND
+      );
+
+    return res.status(200).json({
+      status: 200,
+      data: data,
+    });
+  } catch (error: any) {
+    if (error instanceof APIError) {
+      return res.status(error.statusCode).json({
+        status: error.statusCode,
+        message: error.errorMessage,
+      });
+    } else {
+      return res.status(500).json({
+        status: 500,
+        message: error.message ?? "Something went wrong",
+      });
+    }
+  }
+};
+
 export {
   createUser,
   createMinion,
@@ -520,4 +599,6 @@ export {
   loginUser,
   getUnassignedMinions,
   changePassword,
+  getAllScans,
+  getScanInfo,
 };

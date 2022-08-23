@@ -11,6 +11,7 @@ export type AddNewScanMinionSoftwareEntryDTO = {
   minion_id: string;
   software_id: string;
   ran_at: Date;
+  flag: FlagEnum;
 };
 
 export type AddNewSoftwareDTO = {
