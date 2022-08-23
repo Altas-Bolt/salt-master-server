@@ -15,6 +15,7 @@ import {
   rejectAllMinionKeys,
   rejectMinionKey,
 } from "./utils/saltKeyHelpers";
+import { getAllMinions } from "./utils/getAllMinions";
 
 const linuxScan = async (req: Request, res: Response) => {
   try {
@@ -32,29 +33,36 @@ const linuxScan = async (req: Request, res: Response) => {
       ranAt,
     });
 
+    const minionsInDb = await getAllMinions(OSEnum.LINUX);
     const minionIdToSoftwareNameMap = parseLinuxScanOp(output.trim());
 
     const insertValues: AddNewScanMinionSoftwareEntryDTO[] = [];
+    const absentMinions: string[] = [];
 
-    for (const saltId in minionIdToSoftwareNameMap) {
-      const minionSoftwareMap = await getSoftwaresForMinion(saltId.trim());
-      if (!minionSoftwareMap) {
-        console.log("Minion not found in DB");
-        continue;
+    for (const minion of minionsInDb) {
+      const trackedSoftwaresName = minionIdToSoftwareNameMap[minion.saltId];
+      if (!trackedSoftwaresName) {
+        absentMinions.push(minion.id);
       }
 
-      for (const softwareName of minionIdToSoftwareNameMap[saltId]) {
+      const minionSoftwareMap = await getSoftwaresForMinion(minion.id);
+
+      for (const softwareName of trackedSoftwaresName) {
         let softwareId: string | null = null;
+        let flag: FlagEnum = FlagEnum.UNDECIDED;
+
         if (minionSoftwareMap.softwares[softwareName]) {
           softwareId = minionSoftwareMap.softwares[softwareName].id;
+          flag = minionSoftwareMap.softwares[softwareName].flag;
         } else {
-          const [{ id }, ..._] = await addNewSoftware({
+          const [{ id, flag: newFlag }, ..._] = await addNewSoftware({
             name: softwareName.trim(),
             flag: FlagEnum.UNDECIDED,
             minionId: minionSoftwareMap.id.trim(),
           });
 
           softwareId = id;
+          flag = newFlag;
         }
 
         insertValues.push({
@@ -62,6 +70,7 @@ const linuxScan = async (req: Request, res: Response) => {
           scan_id: newScan.id,
           software_id: softwareId,
           ran_at: ranAt,
+          flag,
         });
       }
     }
@@ -71,7 +80,10 @@ const linuxScan = async (req: Request, res: Response) => {
     return res.status(200).json({
       status: 200,
       message: "Scan successfull",
-      data: result,
+      data: {
+        newEntries: result,
+        absentMinions,
+      },
     });
   } catch (error) {
     console.error("[salt:linuxScan]", error);
@@ -154,6 +166,30 @@ const rejectMinionKeysController = async (
     return res.status(400).json({
       status: 400,
       message: "Error accepting keys",
+    });
+  }
+};
+
+const runCommand = async (req: Request, res: Response) => {
+  try {
+    const output = await runCmd(
+      `echo ${process.env.PASSWORD || ""} | sudo -S salt '${
+        req.body.saltIds ? req.body.saltIds.join(",") : "*"
+      }' cmd.run '${req.body.cmd}'`
+    );
+
+    const result = parseLinuxScanOp(output);
+
+    return res.status(200).json({
+      status: 200,
+      message: "Scan successfull",
+      data: result,
+    });
+  } catch (error) {
+    console.error("[salt:runCommand]", error);
+    return res.status(400).json({
+      status: 400,
+      message: "Error occured on remote execution",
       data: null,
     });
   }
@@ -164,4 +200,5 @@ export {
   getSaltMinionKeysController,
   acceptMinionKeysController,
   rejectMinionKeysController,
+  runCommand,
 };

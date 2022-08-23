@@ -1,30 +1,12 @@
 import { FlagEnum, TablesEnum } from "../../global.enum";
-import {
-  IMinionTable,
-  ISoftwaresTable,
-} from "../../bolt/database/db.interface";
+import { ISoftwaresTable } from "../../bolt/database/db.interface";
 import supabase from "../../bolt/database/init";
 
-export const getSoftwaresForMinion = async (saltId: string) => {
-  const { data: minions, error: errorInFindingMinion } = await supabase
-    .from<IMinionTable>(TablesEnum.MINION)
-    .select("id")
-    .eq("saltId", saltId.trim());
-
-  if (errorInFindingMinion) {
-    return Promise.reject(errorInFindingMinion);
-  }
-
-  if (!minions || minions.length <= 0) {
-    return null;
-  }
-
-  const minion = minions[0];
-
+export const getSoftwaresForMinion = async (minionId: string) => {
   const { data: softwares, error: errorInFindingSoftwares } = await supabase
     .from<ISoftwaresTable>(TablesEnum.SOFTWARES)
     .select()
-    .eq("minion_id", minion.id);
+    .eq("minion_id", minionId.trim());
 
   if (errorInFindingSoftwares || !softwares) {
     return Promise.reject(errorInFindingSoftwares || "Softwares not found");
@@ -39,5 +21,5 @@ export const getSoftwaresForMinion = async (saltId: string) => {
     };
   });
 
-  return { id: minion.id, softwares: softwaresMap };
+  return { id: minionId.trim(), softwares: softwaresMap };
 };

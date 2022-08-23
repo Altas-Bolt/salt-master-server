@@ -42,4 +42,5 @@ export interface IScanMinionSoftwaresTable {
   minion_id: string;
   software_id: string;
   ran_at: Date;
+  flag: FlagEnum;
 }
