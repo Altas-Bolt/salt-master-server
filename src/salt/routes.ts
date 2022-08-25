@@ -3,14 +3,14 @@ import { admin, auth } from "../bolt/middlewares";
 import {
   acceptMinionKeysController,
   getSaltMinionKeysController,
-  linuxScan,
+  scan,
   rejectMinionKeysController,
   runCommand,
 } from "./controllers";
 
 const router = Router();
 
-router.post("/linux-scan", linuxScan);
+router.post("/scan", scan);
 router.get("/keys", [auth, admin], getSaltMinionKeysController);
 router.post("/keys/accept", [auth, admin], acceptMinionKeysController);
 router.post("/keys/reject", [auth, admin], rejectMinionKeysController);

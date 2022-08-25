@@ -16,6 +16,9 @@ import {
   getMinionBySaltId,
   getLatestScan,
   getAllSoftwares,
+  getApplicationListForSaltId,
+  getSoftwareNotifications,
+  resolveNotification,
 } from "./controllers";
 import { admin, auth } from "./middlewares";
 
@@ -44,5 +47,10 @@ router.post("/scans/info", getScanInfo);
 
 // Softwares
 router.post("/softwares/query", getAllSoftwares);
+router.get("/softwares/minion", getApplicationListForSaltId);
+
+// Notifications
+router.get("/notifications/softwares/get", getSoftwareNotifications);
+router.post("/notifications/softwares/resolve", resolveNotification);
 
 export default router;

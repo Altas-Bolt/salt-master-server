@@ -3,7 +3,7 @@ import {
   FlagEnum,
   SoftwareNotificationResolutionsEnum,
   TablesEnum,
-} from "global.enum";
+} from "../../global.enum";
 import supabase from "../database/init";
 import { markSoftwareToTerminalState } from "./softwares.utils";
 
