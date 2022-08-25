@@ -644,14 +644,16 @@ const getScanInfo = async (req: Request, res: Response) => {
       );
 
     const result: Record<string, any> = {};
+    console.log(data);
 
     result.count = getTotalSoftwareCount(data as unknown as IScanInfo[]);
     result.data =
-      req.body.groupBy === "employee"
-        ? scanInfoGroupByUser(data as unknown as IScanInfo[]).map((obj) =>
-            flatObj(obj)
-          )
-        : data.map((obj) => flatObj(obj));
+      // req.body.groupBy === "employee"
+      //   ? scanInfoGroupByUser(data as unknown as IScanInfo[]).map((obj) =>
+      //       flatObj(obj)
+      //     )
+      //   :
+      data.map((obj) => flatObj(obj));
 
     return res.status(200).json({
       status: 200,
