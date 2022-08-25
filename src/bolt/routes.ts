@@ -13,6 +13,7 @@ import {
   getScanInfo,
   getUserById,
   loginUser,
+  getMinionBySaltId,
 } from "./controllers";
 import { admin, auth } from "./middlewares";
 
@@ -31,6 +32,7 @@ router.post("/minions/create", [auth, admin], createMinion);
 router.get("/minions/all", [auth, admin], getAllMinions);
 router.get("/minions/unassigned", [auth, admin], getUnassignedMinions);
 router.get("/minions/:id", [auth, admin], getMinionById);
+router.get("/minions/getBySaltId/:saltId", [auth, admin], getMinionBySaltId);
 router.put("/minions/add-user/:minionId", [auth, admin], addUserToMinion);
 
 // Scan
