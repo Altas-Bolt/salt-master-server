@@ -843,7 +843,9 @@ const getSoftwareNotifications = async (
 
     const { data, error } = await supabaseClient
       .from<ISoftwareNotifications>(TablesEnum.SOFTWARE_NOTIFICATIONS)
-      .select()
+      .select(
+        `id, created_at, type, scan_id, resolved_at, resolved, resolution_description, software_id, minion:minion_id(id, os, ip, user:user_id(id, email))`
+      )
       .eq("resolved", resolved)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit);
