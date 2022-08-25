@@ -56,36 +56,35 @@ const getSaltMinionKeys = async (): Promise<ISaltMinionKeysOutput> => {
 };
 
 const runSaltConfigManagement = async (minionIds: string[], os: OSEnum) => {
+  if (minionIds.length === 0) return;
+
   try {
+    const minionListId = minionIds.join(",");
+    console.log(
+      "cmd run",
+      `echo ${process.env.PASSWORD} | sudo -S salt -L "${minionListId}" state.apply copy-files-linux`
+    );
+
     if (os === OSEnum.LINUX) {
-      await runCmd(
-        `echo ${process.env.PASSWORD} | sudo -S salt -L "${minionIds.join(
-          ","
-        )}" state.apply copy-files-linux`
+      const output = await runCmd(
+        `echo ${process.env.PASSWORD} | sudo -S salt -L "${minionListId}" state.apply copy-files-linux`
+      );
+      console.log("output", output);
+      console.log(
+        "output",
+        `echo ${process.env.PASSWORD} | sudo -S salt -L "${minionListId}" state.apply install-app`
       );
       await runCmd(
-        `echo ${process.env.PASSWORD} | sudo -S salt -L "${minionIds.join(
-          ","
-        )}" state.apply install-app`
+        `echo ${process.env.PASSWORD} | sudo -S salt -L "${minionListId}" state.apply install-app`
       );
     } else {
       await runCmd(
-        `echo ${process.env.PASSWORD} | sudo -S salt -L "${minionIds.join(
-          ","
-        )}" state.apply copy-files-win`
+        `echo ${process.env.PASSWORD} | sudo -S salt -L "${minionListId}" state.apply copy-files-win`
       );
       await runCmd(
-        `echo ${process.env.PASSWORD} | sudo -S salt -L "${minionIds.join(
-          ","
-        )}" state.apply install-app-windows`
+        `echo ${process.env.PASSWORD} | sudo -S salt -L "${minionListId}" state.apply install-app-windows`
       );
     }
-
-    console.log(
-      `echo ${process.env.PASSWORD} | sudo -S salt -L "${minionIds.join(
-        ","
-      )}" state.apply install-app`
-    );
 
     return;
   } catch (err: any) {

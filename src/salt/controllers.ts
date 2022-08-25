@@ -155,6 +155,18 @@ const acceptMinionKeysController = async (
         .select();
     }
 
+    console.log("minions", minions);
+    console.log(
+      "minions mapped",
+
+      //@ts-ignore
+      minions.data
+        .filter((m: IMinionTable) => m.os === OSEnum.LINUX)
+        .map((m: IMinionTable) => m.saltId)
+    );
+
+    console.log("pwd", process.env.PWD);
+
     await runSaltConfigManagement(
       //@ts-ignore
       minions.data
