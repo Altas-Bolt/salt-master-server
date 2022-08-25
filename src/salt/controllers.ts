@@ -106,18 +106,18 @@ const scan = async (
           softwareCountInScan.whitelisted++;
         } else if (flag === FlagEnum.BLACKLISTED) {
           createNotifications.push({
-            softwareId,
+            software_id: softwareId,
             type: SoftwareNotificationTypesEnum.BLACKLISTED,
-            scanId: newScan.id,
-            minionId: minion.id,
+            scan_id: newScan.id,
+            minion_id: minion.id,
           });
           softwareCountInScan.blacklisted++;
         } else {
           createNotifications.push({
-            softwareId,
+            software_id: softwareId,
             type: SoftwareNotificationTypesEnum.NEW,
-            scanId: newScan.id,
-            minionId: minion.id,
+            scan_id: newScan.id,
+            minion_id: minion.id,
           });
           softwareCountInScan.undecided++;
         }

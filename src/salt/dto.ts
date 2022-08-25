@@ -26,7 +26,7 @@ export type AddNewSoftwareDTO = {
 
 export type CreateNewSoftwareNotification = {
   type: SoftwareNotificationTypesEnum;
-  scanId: string;
-  minionId: string;
-  softwareId: string;
+  scan_id: string;
+  minion_id: string;
+  software_id: string;
 };

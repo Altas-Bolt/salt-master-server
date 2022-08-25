@@ -775,6 +775,8 @@ const getApplicationListForSaltId = async (
         ErrorCodes.NOT_FOUND
       );
 
+    console.log({ latestScan });
+
     const saltId = req.query.saltId.trim();
 
     const { data: minionId, error: errorInGettingMinionId } =
@@ -789,6 +791,8 @@ const getApplicationListForSaltId = async (
           `Could not find minion for given id DB`,
         ErrorCodes.NOT_FOUND
       );
+
+    console.log({ minionId });
 
     const { data, error } = await supabaseClient
       .from<IScanMinionSoftwaresTable>(TablesEnum.SCAN_MINION_SOFTWARES)
@@ -829,7 +833,7 @@ const getApplicationListForSaltId = async (
 };
 
 const getSoftwareNotifications = async (
-  req: TRequestQuery<{ resolved?: string; limit: string; offset: string }>,
+  req: TRequestQuery<{ resolved: string; limit: string; offset: string }>,
   res: Response
 ) => {
   try {
