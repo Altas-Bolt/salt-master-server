@@ -844,7 +844,7 @@ const getSoftwareNotifications = async (
     const { data, error } = await supabaseClient
       .from<ISoftwareNotifications>(TablesEnum.SOFTWARE_NOTIFICATIONS)
       .select(
-        `id, created_at, type, scan_id, resolved_at, resolved, resolution_description, software_id, minion:minion_id(id, os, ip, user:user_id(id, email))`
+        `id, created_at, type, scan_id, minion:minion_id ( id, os, ip, user:userId ( id, email ) ), resolved_by, resolved, resolution_description, software_id`
       )
       .eq("resolved", resolved)
       .order("created_at", { ascending: false })
@@ -858,7 +858,7 @@ const getSoftwareNotifications = async (
 
     return res.status(200).json({
       status: 200,
-      data: data,
+      data: data.map((obj) => flatObj(obj)),
     });
   } catch (error: any) {
     if (error instanceof APIError) {
