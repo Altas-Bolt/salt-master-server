@@ -6,7 +6,6 @@ export const scanInfoGroupByUser = (scanInfo: IScanInfo[]) => {
 
   scanInfo.forEach((scanEntry) => {
     if (minionIdToSoftwares[scanEntry.minion_id]) {
-      console.log("found", minionIdToSoftwares[scanEntry.minion_id]);
       minionIdToSoftwares[scanEntry.minion_id].softwareCount.total++;
 
       if (scanEntry.software.flag === FlagEnum.BLACKLISTED) {
@@ -21,7 +20,6 @@ export const scanInfoGroupByUser = (scanInfo: IScanInfo[]) => {
         scanEntry.software
       );
     } else {
-      console.log("not found");
       const softwareCount: IMinionInfoForScan["softwareCount"] = {
         total: 1,
         blacklisted: 0,
@@ -54,5 +52,8 @@ export const scanInfoGroupByUser = (scanInfo: IScanInfo[]) => {
     }
   });
 
-  return minionIdToSoftwares;
+  return Object.keys(minionIdToSoftwares).map((minionId) => ({
+    minion_id: minionId,
+    ...minionIdToSoftwares[minionId],
+  }));
 };

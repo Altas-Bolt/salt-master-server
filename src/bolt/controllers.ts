@@ -570,7 +570,7 @@ const getScanInfo = async (req: Request, res: Response) => {
     result.count = getTotalSoftwareCount(data as unknown as IScanInfo[]);
     result.data =
       req.body.groupBy === "employee"
-        ? Object.values(scanInfoGroupByUser(data as unknown as IScanInfo[]))
+        ? scanInfoGroupByUser(data as unknown as IScanInfo[])
         : data;
 
     return res.status(200).json({
