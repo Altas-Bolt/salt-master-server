@@ -6,7 +6,8 @@ export const getAllMinions = async (os: OSEnum) => {
   const { data: minions, error } = await supabase
     .from<IMinionTable>(TablesEnum.MINION)
     .select()
-    .eq("os", os.trim());
+    .eq("os", os.trim())
+    .not("userId", "is", null);
 
   if (error || !minions) {
     return Promise.reject(error || "No minions found in the DB");

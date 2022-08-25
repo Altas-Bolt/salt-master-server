@@ -8,17 +8,21 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import config from "../config";
 import { uuid } from "uuidv4";
-import { OSEnum, TablesEnum } from "../global.enum";
+import { MinionIdentityEnum, OSEnum, TablesEnum } from "../global.enum";
 import {
   IMinionTable,
   IUserTable,
   IScanMinionSoftwaresTable,
   IScanTable,
+  ISoftwaresTable,
 } from "./database/db.interface";
-import { ChangePasswordDTO } from "./dto";
+import { ChangePasswordDTO, TGetSoftwaresQuery } from "./dto";
 import { IScanInfo } from "./bolt.interface";
 import { getTotalSoftwareCount } from "./utils/getTotalSoftwareCount";
 import { scanInfoGroupByUser } from "./utils/scanInfoGroupBy";
+import { flatObj } from "./utils/flatObj";
+import { TRequestBody, TRequestQuery } from "../utils.types";
+import { getOrThrowQuery } from "./utils/getOrThrowQuery";
 
 // ------ User -------
 const createUser = async (
@@ -591,12 +595,50 @@ const getAllScans = async (_req: Request, res: Response) => {
   }
 };
 
+const getLatestScan = async (
+  req: TRequestQuery<{ limit: string }>,
+  res: Response
+) => {
+  try {
+    const limit = parseInt(req.query.limit);
+
+    const { data, error } = await supabaseClient
+      .from<IScanTable>(TablesEnum.SCAN)
+      .select()
+      .order("ran_at", { ascending: false })
+      .limit(limit);
+
+    if (error || !data)
+      throw new APIError(
+        error?.message || `Could not find scans in DB`,
+        ErrorCodes.NOT_FOUND
+      );
+
+    return res.status(200).json({
+      status: 200,
+      data: limit > 1 ? data : data[0],
+    });
+  } catch (error: any) {
+    if (error instanceof APIError) {
+      return res.status(error.statusCode).json({
+        status: error.statusCode,
+        message: error.errorMessage,
+      });
+    } else {
+      return res.status(500).json({
+        status: 500,
+        message: error.message ?? "Something went wrong",
+      });
+    }
+  }
+};
+
 const getScanInfo = async (req: Request, res: Response) => {
   try {
     const { data, error } = await supabaseClient
       .from<IScanMinionSoftwaresTable>(TablesEnum.SCAN_MINION_SOFTWARES)
       .select(
-        `id, flag, minion_id, software:software_id (id, name, flag), minion:minion_id (id, saltId, os, user:userId (id, email, role) )`
+        `id, flag, minion_id, software:software_id (id, name, flag), minion:minion_id (id, saltId, os, ip, user:userId (id, email, role) )`
       )
       .eq("scan_id", req.body.scanId.trim());
 
@@ -612,8 +654,10 @@ const getScanInfo = async (req: Request, res: Response) => {
     result.count = getTotalSoftwareCount(data as unknown as IScanInfo[]);
     result.data =
       req.body.groupBy === "employee"
-        ? scanInfoGroupByUser(data as unknown as IScanInfo[])
-        : data;
+        ? scanInfoGroupByUser(data as unknown as IScanInfo[]).map((obj) =>
+            flatObj(obj)
+          )
+        : data.map((obj) => flatObj(obj));
 
     return res.status(200).json({
       status: 200,
@@ -634,6 +678,116 @@ const getScanInfo = async (req: Request, res: Response) => {
   }
 };
 
+// -- Softwares --
+const getAllSoftwares = async (
+  req: TRequestBody<TGetSoftwaresQuery>,
+  res: Response
+) => {
+  try {
+    let minionIds: string[] = [];
+
+    if (
+      req.body.minions &&
+      req.body.minions.length > 0 &&
+      req.body.minionIdentity
+    ) {
+      minionIds =
+        req.body.minionIdentity === MinionIdentityEnum.SALT_ID
+          ? (
+              await getOrThrowQuery<IMinionTable>(
+                supabaseClient
+                  .from<IMinionTable>(TablesEnum.MINION)
+                  .select("id")
+                  .in("saltId", req.body.minions)
+              )
+            ).map((obj) => obj.id)
+          : req.body.minions;
+    } else if (!req.body.minions || req.body.minions.length === 0) {
+      minionIds = (
+        await getOrThrowQuery<IMinionTable>(
+          supabaseClient.from<IMinionTable>(TablesEnum.MINION).select("id")
+        )
+      ).map((obj) => obj.id);
+    } else {
+      throw new APIError(
+        `'minionIdentity' is required if minions is provided`,
+        ErrorCodes.NOT_FOUND
+      );
+    }
+
+    const { data, error } = await (req.body.flag === "all"
+      ? supabaseClient
+          .from<ISoftwaresTable>(TablesEnum.SOFTWARES)
+          .select()
+          .in("minion_id", minionIds)
+      : supabaseClient
+          .from<ISoftwaresTable>(TablesEnum.SOFTWARES)
+          .select()
+          .in("minion_id", minionIds)
+          .eq("flag", req.body.flag));
+
+    if (error || !data)
+      throw new APIError(
+        error?.message || `Could not find minions`,
+        ErrorCodes.NOT_FOUND
+      );
+
+    return res.status(200).json({
+      status: 200,
+      data,
+    });
+  } catch (error: any) {
+    if (error instanceof APIError) {
+      return res.status(error.statusCode).json({
+        status: error.statusCode,
+        message: error.errorMessage,
+      });
+    } else {
+      return res.status(500).json({
+        status: 500,
+        message: error.message ?? "Something went wrong",
+      });
+    }
+  }
+};
+
+// const getApplicationList = async (
+//   req: TRequestQuery<{ limit: string }>,
+//   res: Response
+// ) => {
+//   try {
+
+//     const { data, error } = await supabaseClient
+//       .from<IScanTable>(TablesEnum.SCAN)
+//       .select()
+//       .order("ran_at", { ascending: false })
+//       .limit(limit);
+
+//     if (error || !data)
+//       throw new APIError(
+//         error?.message || `Could not find scans in DB`,
+//         ErrorCodes.NOT_FOUND
+//       );
+
+//     return res.status(200).json({
+//       status: 200,
+//       data: limit > 1 ? data : data[0],
+//     });
+//   } catch (error: any) {
+//     if (error instanceof APIError) {
+//       return res.status(error.statusCode).json({
+//         status: error.statusCode,
+//         message: error.errorMessage,
+//       });
+//     } else {
+//       return res.status(500).json({
+//         status: 500,
+//         message: error.message ?? "Something went wrong",
+//       });
+//     }
+//   }
+// };
+
 export {
   createUser,
   createMinion,
@@ -649,4 +803,6 @@ export {
   changePassword,
   getAllScans,
   getScanInfo,
+  getLatestScan,
+  getAllSoftwares,
 };

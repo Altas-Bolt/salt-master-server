@@ -1,4 +1,4 @@
-import { OSEnum } from "src/global.enum";
+import { OSEnum } from "../../global.enum";
 import { runCmd } from "./runCommand";
 
 export interface ISaltMinionKeysOutput {

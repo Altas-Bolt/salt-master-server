@@ -23,3 +23,8 @@ export enum UserRoles {
 }
 
 export type UserRolesKeys = keyof typeof UserRoles;
+
+export enum MinionIdentityEnum {
+  ID = "id",
+  SALT_ID = "salt_id",
+}

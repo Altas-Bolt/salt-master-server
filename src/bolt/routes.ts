@@ -14,6 +14,8 @@ import {
   getUserById,
   loginUser,
   getMinionBySaltId,
+  getLatestScan,
+  getAllSoftwares,
 } from "./controllers";
 import { admin, auth } from "./middlewares";
 
@@ -37,6 +39,10 @@ router.put("/minions/add-user/:minionId", [auth, admin], addUserToMinion);
 
 // Scan
 router.get("/scans/all", getAllScans);
+router.get("/scans/latest", getLatestScan);
 router.post("/scans/info", getScanInfo);
+
+// Softwares
+router.post("/softwares/query", getAllSoftwares);
 
 export default router;

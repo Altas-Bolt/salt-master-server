@@ -1,14 +1,11 @@
 import { PostgrestResponse } from "@supabase/postgrest-js";
 import { Request, Response } from "express";
 import { ParamsDictionary } from "express-serve-static-core";
-import { IMinionTable } from "src/bolt/database/db.interface";
-import supabaseClient from "src/bolt/database/init";
 import { FlagEnum, OSEnum, TablesEnum } from "../global.enum";
 import { AddNewScanMinionSoftwareEntryDTO } from "./dto";
 import { addNewSoftware } from "./utils/addNewSoftware";
 import { bulkInsertInScanMinionSoftwares } from "./utils/bulkInsertInScanMinionSoftwares";
 import { createNewScan } from "./utils/createNewScan";
-import { getAllMinions } from "./utils/getAllMinions";
 import { getSoftwaresForMinion } from "./utils/getSoftwaresForMinion";
 import { parseLinuxScanOp } from "./utils/parseLinuxScan";
 import { runCmd } from "./utils/runCommand";
@@ -20,13 +17,27 @@ import {
   rejectMinionKey,
   runSaltConfigManagement,
 } from "./utils/saltKeyHelpers";
+import { getAllMinions } from "./utils/getAllMinions";
+import { TRequestBody } from "../utils.types";
+import { IMinionTable } from "bolt/database/db.interface";
+import supabaseClient from "../bolt/database/init";
 
-const linuxScan = async (req: Request, res: Response) => {
+const linuxScan = async (
+  req: TRequestBody<{ saltIds?: string[]; ranBy?: string }>,
+  res: Response
+) => {
   try {
+    const reqBodySaltIds = req.body.saltIds;
+    const saltIds: string =
+      reqBodySaltIds && reqBodySaltIds.length > 0
+        ? reqBodySaltIds.join(",")
+        : "*";
+    const cmd = "node /etc/bolt/getApps.js";
+
     const output = await runCmd(
       `echo ${
         process.env.PASSWORD || ""
-      } | sudo -S salt 'red-hat-minion' cmd.run 'ls /usr/share'`
+      } | sudo -S salt '${saltIds}' cmd.run '${cmd}'`
     );
 
     const ranAt = new Date();
@@ -47,6 +58,7 @@ const linuxScan = async (req: Request, res: Response) => {
       const trackedSoftwaresName = minionIdToSoftwareNameMap[minion.saltId];
       if (!trackedSoftwaresName) {
         absentMinions.push(minion.id);
+        continue;
       }
 
       const minionSoftwareMap = await getSoftwaresForMinion(minion.id);
