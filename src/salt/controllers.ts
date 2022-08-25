@@ -1,8 +1,16 @@
 import { PostgrestResponse } from "@supabase/postgrest-js";
 import { Request, Response } from "express";
 import { ParamsDictionary } from "express-serve-static-core";
-import { FlagEnum, OSEnum, TablesEnum } from "../global.enum";
-import { AddNewScanMinionSoftwareEntryDTO } from "./dto";
+import {
+  FlagEnum,
+  OSEnum,
+  SoftwareNotificationTypesEnum,
+  TablesEnum,
+} from "../global.enum";
+import {
+  AddNewScanMinionSoftwareEntryDTO,
+  CreateNewSoftwareNotification,
+} from "./dto";
 import { addNewSoftware } from "./utils/addNewSoftware";
 import { bulkInsertInScanMinionSoftwares } from "./utils/bulkInsertInScanMinionSoftwares";
 import { createNewScan } from "./utils/createNewScan";
@@ -21,18 +29,25 @@ import { getAllMinions } from "./utils/getAllMinions";
 import { TRequestBody } from "../utils.types";
 import { IMinionTable } from "bolt/database/db.interface";
 import supabaseClient from "../bolt/database/init";
+import { updateScan } from "./utils/updateScan";
+import { bulkInsertSoftwareNotifications } from "./utils/bulkInsertSoftwareNotifications";
 
-const linuxScan = async (
-  req: TRequestBody<{ saltIds?: string[]; ranBy?: string }>,
+const scan = async (
+  req: TRequestBody<{ os: OSEnum; saltIds?: string[]; ranBy?: string }>,
   res: Response
 ) => {
   try {
     const reqBodySaltIds = req.body.saltIds;
+
     const saltIds: string =
       reqBodySaltIds && reqBodySaltIds.length > 0
         ? reqBodySaltIds.join(",")
         : "*";
-    const cmd = "node /etc/bolt/getApps.js";
+    const cmd =
+      req.body.os.trim() === OSEnum.LINUX
+        ? "node /etc/bolt/getApps.js"
+        : "./path/to/exe/file";
+    const os = req.body.os;
 
     const output = await runCmd(
       `echo ${
@@ -43,16 +58,22 @@ const linuxScan = async (
     const ranAt = new Date();
 
     const newScan = await createNewScan({
-      os: OSEnum.LINUX,
+      os,
       ranBy: req.body.ranBy || "SCHEDULED",
       ranAt,
     });
 
-    const minionsInDb = await getAllMinions(OSEnum.LINUX);
+    const minionsInDb = await getAllMinions(os);
     const minionIdToSoftwareNameMap = parseLinuxScanOp(output.trim());
 
     const insertValues: AddNewScanMinionSoftwareEntryDTO[] = [];
     const absentMinions: string[] = [];
+    const softwareCountInScan = {
+      blacklisted: 0,
+      whitelisted: 0,
+      undecided: 0,
+    };
+    const createNotifications: CreateNewSoftwareNotification[] = [];
 
     for (const minion of minionsInDb) {
       const trackedSoftwaresName = minionIdToSoftwareNameMap[minion.saltId];
@@ -81,6 +102,26 @@ const linuxScan = async (
           flag = newFlag;
         }
 
+        if (flag === FlagEnum.WHITELISTED) {
+          softwareCountInScan.whitelisted++;
+        } else if (flag === FlagEnum.BLACKLISTED) {
+          createNotifications.push({
+            softwareId,
+            type: SoftwareNotificationTypesEnum.BLACKLISTED,
+            scanId: newScan.id,
+            minionId: minion.id,
+          });
+          softwareCountInScan.blacklisted++;
+        } else {
+          createNotifications.push({
+            softwareId,
+            type: SoftwareNotificationTypesEnum.NEW,
+            scanId: newScan.id,
+            minionId: minion.id,
+          });
+          softwareCountInScan.undecided++;
+        }
+
         insertValues.push({
           minion_id: minionSoftwareMap.id.trim(),
           scan_id: newScan.id,
@@ -91,7 +132,15 @@ const linuxScan = async (
       }
     }
 
-    const result = await bulkInsertInScanMinionSoftwares(insertValues);
+    const [result] = await Promise.all([
+      bulkInsertInScanMinionSoftwares(insertValues),
+      updateScan(newScan.id, {
+        blacklisted_softwares_count: softwareCountInScan.blacklisted,
+        whitelisted_softwares_count: softwareCountInScan.whitelisted,
+        undecided_softwares_count: softwareCountInScan.undecided,
+      }),
+      bulkInsertSoftwareNotifications(createNotifications),
+    ]);
 
     return res.status(200).json({
       status: 200,
@@ -250,7 +299,7 @@ const runCommand = async (req: Request, res: Response) => {
 };
 
 export {
-  linuxScan,
+  scan,
   getSaltMinionKeysController,
   acceptMinionKeysController,
   rejectMinionKeysController,

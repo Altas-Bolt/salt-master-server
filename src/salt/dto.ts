@@ -1,4 +1,8 @@
-import { FlagEnum, OSEnum } from "../global.enum";
+import {
+  FlagEnum,
+  OSEnum,
+  SoftwareNotificationTypesEnum,
+} from "../global.enum";
 
 export type CreateNewScanDTO = {
   os: OSEnum;
@@ -18,4 +22,11 @@ export type AddNewSoftwareDTO = {
   name: string;
   flag: FlagEnum;
   minionId: string;
+};
+
+export type CreateNewSoftwareNotification = {
+  type: SoftwareNotificationTypesEnum;
+  scanId: string;
+  minionId: string;
+  softwareId: string;
 };

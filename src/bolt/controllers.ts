@@ -8,13 +8,20 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import config from "../config";
 import { uuid } from "uuidv4";
-import { MinionIdentityEnum, OSEnum, TablesEnum } from "../global.enum";
+import {
+  FlagEnum,
+  MinionIdentityEnum,
+  OSEnum,
+  SoftwareNotificationResolutionsEnum,
+  TablesEnum,
+} from "../global.enum";
 import {
   IMinionTable,
   IUserTable,
   IScanMinionSoftwaresTable,
   IScanTable,
   ISoftwaresTable,
+  ISoftwareNotifications,
 } from "./database/db.interface";
 import { ChangePasswordDTO, TGetSoftwaresQuery } from "./dto";
 import { IScanInfo } from "./bolt.interface";
@@ -23,6 +30,7 @@ import { scanInfoGroupByUser } from "./utils/scanInfoGroupBy";
 import { flatObj } from "./utils/flatObj";
 import { TRequestBody, TRequestQuery } from "../utils.types";
 import { getOrThrowQuery } from "./utils/getOrThrowQuery";
+import { resolveNotification as resolveNotificationHelper } from "./utils/softwareNotification.utils";
 
 // ------ User -------
 const createUser = async (
@@ -381,39 +389,37 @@ const createMinion = async (
 };
 
 const addUserToMinion = async (
-  req: Request<{ minionId: string }, any, { userId: string }>,
+  req: Request<{ id: string }, any, { email: string }>,
   res: Response
 ) => {
   try {
-    const [{ data, error }, { data: userData, error: userError }] =
-      await Promise.all([
-        supabaseClient
-          .from<IMinionTable>(TablesEnum.MINION)
-          .update({ userId: req.body.userId })
-          .eq("id", req.params.minionId),
-        supabaseClient
-          .from<IUserTable>("user")
-          .update({ minionId: req.params.minionId })
-          .eq("id", req.body.userId),
-      ]);
+    const { data: userData, error: userError } = await supabaseClient
+      .from<IUserTable>("user")
+      .update({ minionId: req.params.id })
+      .eq("email", req.body.email);
 
-    if (error || !data)
-      throw new APIError(
-        error?.message ||
-          `Could not add user ${req.body.userId} to minion with id ${req.params.minionId}`,
-        ErrorCodes.BAD_REQUEST
-      );
-
-    if (userError || !userData)
+    if (!userData || userError) {
       throw new APIError(
         userError?.message ||
-          `Could not add user ${req.body.userId} to minion with id ${req.params.minionId}`,
+          `Could not add user ${req.body.email} to minion with id ${req.params.id}`,
         ErrorCodes.BAD_REQUEST
       );
+    }
 
+    const { data: minionData, error: minionError } = await supabaseClient
+      .from<IMinionTable>(TablesEnum.MINION)
+      .update({ userId: userData[0].id })
+      .eq("id", req.params.id);
+
+    if (minionError || !minionData)
+      throw new APIError(
+        minionError?.message ||
+          `Could not add user ${req.body.email} to minion with id ${req.params.id}`,
+        ErrorCodes.BAD_REQUEST
+      );
     return res.status(200).json({
       status: 200,
-      data: data[0],
+      data: minionData[0],
     });
   } catch (error: any) {
     if (error instanceof APIError) {
@@ -638,7 +644,7 @@ const getScanInfo = async (req: Request, res: Response) => {
     const { data, error } = await supabaseClient
       .from<IScanMinionSoftwaresTable>(TablesEnum.SCAN_MINION_SOFTWARES)
       .select(
-        `id, flag, minion_id, software:software_id (id, name, flag), minion:minion_id (id, saltId, os, ip, user:userId (id, email, role) )`
+        `id, flag, minion_id, blacklisted_softwares_count, whitelisted_softwares_count, undecided_softwares_count  software:software_id (id, name, flag), minion:minion_id (id, saltId, os, ip, user:userId (id, email, role) )`
       )
       .eq("scan_id", req.body.scanId.trim());
 
@@ -822,6 +828,85 @@ const getApplicationListForSaltId = async (
   }
 };
 
+const getSoftwareNotifications = async (
+  req: TRequestQuery<{ resolved?: string; limit: string; offset: string }>,
+  res: Response
+) => {
+  try {
+    const limit = parseInt(req.query.limit);
+    const offset = parseInt(req.query.offset);
+    const resolved = req.query.resolved === "true" ? true : false;
+
+    const { data, error } = await supabaseClient
+      .from<ISoftwareNotifications>(TablesEnum.SOFTWARE_NOTIFICATIONS)
+      .select()
+      .eq("resolved", resolved)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit);
+
+    if (error || !data)
+      throw new APIError(
+        error?.message || `Could not find software notifications in DB`,
+        ErrorCodes.NOT_FOUND
+      );
+
+    return res.status(200).json({
+      status: 200,
+      data: data,
+    });
+  } catch (error: any) {
+    if (error instanceof APIError) {
+      return res.status(error.statusCode).json({
+        status: error.statusCode,
+        message: error.errorMessage,
+      });
+    } else {
+      return res.status(500).json({
+        status: 500,
+        message: error.message ?? "Something went wrong",
+      });
+    }
+  }
+};
+
+const resolveNotification = async (
+  req: TRequestBody<{
+    id: string;
+    resolvedBy: string;
+    terminalState: FlagEnum.BLACKLISTED | FlagEnum.WHITELISTED;
+    resolution: SoftwareNotificationResolutionsEnum;
+  }>,
+  res: Response
+) => {
+  try {
+    const { id, resolvedBy, terminalState, resolution } = req.body;
+
+    const data = await resolveNotificationHelper(
+      id,
+      resolvedBy,
+      terminalState,
+      resolution
+    );
+
+    return res.status(200).json({
+      status: 200,
+      data: data,
+    });
+  } catch (error: any) {
+    if (error instanceof APIError) {
+      return res.status(error.statusCode).json({
+        status: error.statusCode,
+        message: error.errorMessage,
+      });
+    } else {
+      return res.status(500).json({
+        status: 500,
+        message: error.message ?? "Something went wrong",
+      });
+    }
+  }
+};
+
 export {
   createUser,
   createMinion,
@@ -840,4 +925,6 @@ export {
   getLatestScan,
   getAllSoftwares,
   getApplicationListForSaltId,
+  getSoftwareNotifications,
+  resolveNotification,
 };

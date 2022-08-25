@@ -56,6 +56,7 @@ const getSaltMinionKeys = async (): Promise<ISaltMinionKeysOutput> => {
 };
 
 const runSaltConfigManagement = async (minionIds: string[], os: OSEnum) => {
+  return; //!HELL
   if (minionIds.length === 0) return;
 
   try {

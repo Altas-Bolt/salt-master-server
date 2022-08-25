@@ -5,6 +5,10 @@ const parseLinuxScanOp = (str: string) => {
   let error: string | null = null;
 
   for (const line of lines) {
+    if (line.trim().length === 0) {
+      continue;
+    }
+
     if (/^[\w\d]+/g.test(line)) {
       error = null;
       currentMinionId = line.trim().slice(0, -1);
@@ -17,7 +21,7 @@ const parseLinuxScanOp = (str: string) => {
         currentMinionId = line.trim().slice(0, -1);
         result[currentMinionId] = [];
       } else if (/^[\s]+/g.test(line) && currentMinionId) {
-        if (line.trim().startsWith("Minion did not return. [No response]")) {
+        if (line.trim().startsWith("Minion did not return")) {
           error = currentMinionId;
           delete result[currentMinionId];
         } else {
