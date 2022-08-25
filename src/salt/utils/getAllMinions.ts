@@ -7,7 +7,7 @@ export const getAllMinions = async (os: OSEnum) => {
     .from<IMinionTable>(TablesEnum.MINION)
     .select()
     .eq("os", os.trim())
-    .neq("userId", null);
+    .not("userId", "is", null);
 
   if (error || !minions) {
     return Promise.reject(error || "No minions found in the DB");
