@@ -19,6 +19,7 @@ import { ChangePasswordDTO } from "./dto";
 import { IScanInfo } from "./bolt.interface";
 import { getTotalSoftwareCount } from "./utils/getTotalSoftwareCount";
 import { scanInfoGroupByUser } from "./utils/scanInfoGroupBy";
+import { flatObj } from "./utils/flatObj";
 
 // ------ User -------
 const createUser = async (
@@ -570,8 +571,10 @@ const getScanInfo = async (req: Request, res: Response) => {
     result.count = getTotalSoftwareCount(data as unknown as IScanInfo[]);
     result.data =
       req.body.groupBy === "employee"
-        ? scanInfoGroupByUser(data as unknown as IScanInfo[])
-        : data;
+        ? scanInfoGroupByUser(data as unknown as IScanInfo[]).map((obj) =>
+            flatObj(obj)
+          )
+        : data.map((obj) => flatObj(obj));
 
     return res.status(200).json({
       status: 200,
