@@ -751,42 +751,76 @@ const getAllSoftwares = async (
   }
 };
 
-// const getApplicationList = async (
-//   req: TRequestQuery<{ limit: string }>,
-//   res: Response
-// ) => {
-//   try {
+const getApplicationListForSaltId = async (
+  req: TRequestQuery<{ saltId: string }>,
+  res: Response
+) => {
+  try {
+    const { data: latestScan, error: errorInGettingLatestScan } =
+      await supabaseClient
+        .from<IScanTable>(TablesEnum.SCAN)
+        .select()
+        .order("created_at", { ascending: false })
+        .limit(1);
 
-//     const { data, error } = await supabaseClient
-//       .from<IScanTable>(TablesEnum.SCAN)
-//       .select()
-//       .order("ran_at", { ascending: false })
-//       .limit(limit);
+    if (errorInGettingLatestScan || !latestScan)
+      throw new APIError(
+        errorInGettingLatestScan?.message || `Could not find latest scan in DB`,
+        ErrorCodes.NOT_FOUND
+      );
 
-//     if (error || !data)
-//       throw new APIError(
-//         error?.message || `Could not find scans in DB`,
-//         ErrorCodes.NOT_FOUND
-//       );
+    const saltId = req.query.saltId.trim();
 
-//     return res.status(200).json({
-//       status: 200,
-//       data: limit > 1 ? data : data[0],
-//     });
-//   } catch (error: any) {
-//     if (error instanceof APIError) {
-//       return res.status(error.statusCode).json({
-//         status: error.statusCode,
-//         message: error.errorMessage,
-//       });
-//     } else {
-//       return res.status(500).json({
-//         status: 500,
-//         message: error.message ?? "Something went wrong",
-//       });
-//     }
-//   }
-// };
+    const { data: minionId, error: errorInGettingMinionId } =
+      await supabaseClient
+        .from<IMinionTable>(TablesEnum.MINION)
+        .select()
+        .eq("saltId", saltId);
+
+    if (errorInGettingMinionId || !minionId)
+      throw new APIError(
+        errorInGettingMinionId?.message ||
+          `Could not find minion for given id DB`,
+        ErrorCodes.NOT_FOUND
+      );
+
+    const { data, error } = await supabaseClient
+      .from<IScanMinionSoftwaresTable>(TablesEnum.SCAN_MINION_SOFTWARES)
+      .select(
+        `id, flag, minion_id, software:software_id (id, name, flag), minion:minion_id (id, saltId, os, ip, user:userId (id, email, role) )`
+      )
+      .eq("scan_id", latestScan[0].id)
+      .eq("minion_id", minionId[0].id);
+
+    if (error || !data)
+      throw new APIError(
+        error?.message || `Could not find entries in DB`,
+        ErrorCodes.NOT_FOUND
+      );
+
+    const result: Record<string, any> = {};
+
+    result.count = getTotalSoftwareCount(data as unknown as IScanInfo[]);
+    result.data = data.map((obj) => flatObj(obj));
+
+    return res.status(200).json({
+      status: 200,
+      data: result,
+    });
+  } catch (error: any) {
+    if (error instanceof APIError) {
+      return res.status(error.statusCode).json({
+        status: error.statusCode,
+        message: error.errorMessage,
+      });
+    } else {
+      return res.status(500).json({
+        status: 500,
+        message: error.message ?? "Something went wrong",
+      });
+    }
+  }
+};
 
 export {
   createUser,
@@ -805,4 +839,5 @@ export {
   getScanInfo,
   getLatestScan,
   getAllSoftwares,
+  getApplicationListForSaltId,
 };

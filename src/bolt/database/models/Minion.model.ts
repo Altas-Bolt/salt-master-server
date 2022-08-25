@@ -7,7 +7,8 @@ const Minion = Joi.object<IMinionTable>({
   os: Joi.string().required(),
   saltId: Joi.string().default(
     Joi.ref("os", {
-      adjust: (os) => `${os}-${shortid()}`,
+      adjust: (os) =>
+        `${os}-${shortid.characters("123456789abcdefghijklmnopqrstuvwxyz")}`,
     })
   ),
   // saltId:Joi.string().required() ,
