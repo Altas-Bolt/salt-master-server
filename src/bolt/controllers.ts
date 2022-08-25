@@ -586,6 +586,39 @@ const getAllScans = async (_req: Request, res: Response) => {
   }
 };
 
+const getLatestScan = async (_req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabaseClient
+      .from<IScanTable>(TablesEnum.SCAN)
+      .select()
+      .order("ran_at", { ascending: false })
+      .limit(1);
+
+    if (error || !data)
+      throw new APIError(
+        error?.message || `Could not find scans in DB`,
+        ErrorCodes.NOT_FOUND
+      );
+
+    return res.status(200).json({
+      status: 200,
+      data: data[0],
+    });
+  } catch (error: any) {
+    if (error instanceof APIError) {
+      return res.status(error.statusCode).json({
+        status: error.statusCode,
+        message: error.errorMessage,
+      });
+    } else {
+      return res.status(500).json({
+        status: 500,
+        message: error.message ?? "Something went wrong",
+      });
+    }
+  }
+};
+
 const getScanInfo = async (req: Request, res: Response) => {
   try {
     const { data, error } = await supabaseClient
@@ -646,4 +679,5 @@ export {
   changePassword,
   getAllScans,
   getScanInfo,
+  getLatestScan,
 };
