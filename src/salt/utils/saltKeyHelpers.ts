@@ -1,3 +1,4 @@
+import { OSEnum } from "src/global.enum";
 import { runCmd } from "./runCommand";
 
 export interface ISaltMinionKeysOutput {
@@ -54,13 +55,32 @@ const getSaltMinionKeys = async (): Promise<ISaltMinionKeysOutput> => {
   }
 };
 
-const runSaltConfigManagement = async (minionIds: string[]) => {
+const runSaltConfigManagement = async (minionIds: string[], os: OSEnum) => {
   try {
-    await runCmd(
-      `echo ${process.env.PASSWORD} | sudo -S salt -L "${minionIds.join(
-        ","
-      )}" state.apply install-app`
-    );
+    if (os === OSEnum.LINUX) {
+      await runCmd(
+        `echo ${process.env.PASSWORD} | sudo -S salt -L "${minionIds.join(
+          ","
+        )}" state.apply copy-files-linux`
+      );
+      await runCmd(
+        `echo ${process.env.PASSWORD} | sudo -S salt -L "${minionIds.join(
+          ","
+        )}" state.apply install-app`
+      );
+    } else {
+      await runCmd(
+        `echo ${process.env.PASSWORD} | sudo -S salt -L "${minionIds.join(
+          ","
+        )}" state.apply copy-files-win`
+      );
+      await runCmd(
+        `echo ${process.env.PASSWORD} | sudo -S salt -L "${minionIds.join(
+          ","
+        )}" state.apply install-app-windows`
+      );
+    }
+
     console.log(
       `echo ${process.env.PASSWORD} | sudo -S salt -L "${minionIds.join(
         ","
@@ -131,6 +151,7 @@ const rejectAllMinionKeys = async () => {
 };
 
 export {
+  runSaltConfigManagement,
   getSaltMinionKeys,
   acceptMinionKey,
   acceptAllMinionKeys,

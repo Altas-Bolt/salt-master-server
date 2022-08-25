@@ -1,21 +1,25 @@
+import { PostgrestResponse } from "@supabase/postgrest-js";
 import { Request, Response } from "express";
 import { ParamsDictionary } from "express-serve-static-core";
-import { parseLinuxScanOp } from "./utils/parseLinuxScan";
-import { runCmd } from "./utils/runCommand";
-import { createNewScan } from "./utils/createNewScan";
-import { FlagEnum, OSEnum } from "../global.enum";
-import { getSoftwaresForMinion } from "./utils/getSoftwaresForMinion";
+import { IMinionTable } from "src/bolt/database/db.interface";
+import supabaseClient from "src/bolt/database/init";
+import { FlagEnum, OSEnum, TablesEnum } from "../global.enum";
 import { AddNewScanMinionSoftwareEntryDTO } from "./dto";
 import { addNewSoftware } from "./utils/addNewSoftware";
 import { bulkInsertInScanMinionSoftwares } from "./utils/bulkInsertInScanMinionSoftwares";
+import { createNewScan } from "./utils/createNewScan";
+import { getAllMinions } from "./utils/getAllMinions";
+import { getSoftwaresForMinion } from "./utils/getSoftwaresForMinion";
+import { parseLinuxScanOp } from "./utils/parseLinuxScan";
+import { runCmd } from "./utils/runCommand";
 import {
   acceptAllMinionKeys,
   acceptMinionKey,
   getSaltMinionKeys,
   rejectAllMinionKeys,
   rejectMinionKey,
+  runSaltConfigManagement,
 } from "./utils/saltKeyHelpers";
-import { getAllMinions } from "./utils/getAllMinions";
 
 const linuxScan = async (req: Request, res: Response) => {
   try {
@@ -127,6 +131,32 @@ const acceptMinionKeysController = async (
 
       await Promise.all(promiseArr);
     }
+    let minions: PostgrestResponse<IMinionTable>;
+    if (req.body.keys !== "all") {
+      minions = await supabaseClient
+        .from<IMinionTable>(TablesEnum.MINION)
+        .select()
+        .in("saltId", req.body.keys);
+    } else {
+      minions = await supabaseClient
+        .from<IMinionTable>(TablesEnum.MINION)
+        .select();
+    }
+
+    await runSaltConfigManagement(
+      //@ts-ignore
+      minions.data
+        .filter((m: IMinionTable) => m.os === OSEnum.LINUX)
+        .map((m: IMinionTable) => m.saltId),
+      OSEnum.LINUX
+    );
+    await runSaltConfigManagement(
+      //@ts-ignore
+      minions.data
+        .filter((m: IMinionTable) => m.os === OSEnum.WINDOWS)
+        .map((m: IMinionTable) => m.saltId),
+      OSEnum.WINDOWS
+    );
 
     return res.status(200).json({
       status: 200,
