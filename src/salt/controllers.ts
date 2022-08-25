@@ -54,6 +54,7 @@ const linuxScan = async (
       const trackedSoftwaresName = minionIdToSoftwareNameMap[minion.saltId];
       if (!trackedSoftwaresName) {
         absentMinions.push(minion.id);
+        continue;
       }
 
       const minionSoftwareMap = await getSoftwaresForMinion(minion.id);
