@@ -8,7 +8,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import config from "../config";
 import { uuid } from "uuidv4";
-import { FlagEnum, MinionIdentityEnum, TablesEnum } from "../global.enum";
+import { MinionIdentityEnum, TablesEnum } from "../global.enum";
 import {
   IMinionTable,
   IUserTable,
@@ -22,6 +22,7 @@ import { getTotalSoftwareCount } from "./utils/getTotalSoftwareCount";
 import { scanInfoGroupByUser } from "./utils/scanInfoGroupBy";
 import { flatObj } from "./utils/flatObj";
 import { TRequestBody } from "../utils.types";
+import { getOrThrowQuery } from "./utils/getOrThrowQuery";
 
 // ------ User -------
 const createUser = async (
@@ -681,15 +682,21 @@ const getAllSoftwares = async (
     ) {
       minionIds =
         req.body.minionIdentity === MinionIdentityEnum.SALT_ID
-          ? ((await supabaseClient
-              .from<IMinionTable>(TablesEnum.MINION)
-              .select("id")
-              .in("saltId", req.body.minions)) as unknown as string[])
+          ? (
+              await getOrThrowQuery<IMinionTable>(
+                supabaseClient
+                  .from<IMinionTable>(TablesEnum.MINION)
+                  .select("id")
+                  .in("saltId", req.body.minions)
+              )
+            ).map((obj) => obj.id)
           : req.body.minions;
     } else if (!req.body.minions || req.body.minions.length === 0) {
-      minionIds = (await supabaseClient
-        .from<IMinionTable>(TablesEnum.MINION)
-        .select("id")) as unknown as string[];
+      minionIds = (
+        await getOrThrowQuery<IMinionTable>(
+          supabaseClient.from<IMinionTable>(TablesEnum.MINION).select("id")
+        )
+      ).map((obj) => obj.id);
     } else {
       throw new APIError(
         `'minionIdentity' is required if minions is provided`,
