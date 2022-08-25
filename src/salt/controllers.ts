@@ -16,7 +16,7 @@ import {
   rejectMinionKey,
 } from "./utils/saltKeyHelpers";
 import { getAllMinions } from "./utils/getAllMinions";
-import { TRequestBody } from "src/utils.types";
+import { TRequestBody } from "../utils.types";
 
 const linuxScan = async (
   req: TRequestBody<{ saltIds?: string[]; ranBy?: string }>,
