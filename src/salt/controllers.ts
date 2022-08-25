@@ -16,13 +16,24 @@ import {
   rejectMinionKey,
 } from "./utils/saltKeyHelpers";
 import { getAllMinions } from "./utils/getAllMinions";
+import { TRequestBody } from "src/utils.types";
 
-const linuxScan = async (req: Request, res: Response) => {
+const linuxScan = async (
+  req: TRequestBody<{ saltIds?: string[]; ranBy?: string }>,
+  res: Response
+) => {
   try {
+    const reqBodySaltIds = req.body.saltIds;
+    const saltIds: string =
+      reqBodySaltIds && reqBodySaltIds.length > 0
+        ? reqBodySaltIds.join(",")
+        : "*";
+    const cmd = "node /etc/bolt/getApps.js";
+
     const output = await runCmd(
       `echo ${
         process.env.PASSWORD || ""
-      } | sudo -S salt 'red-hat-minion' cmd.run 'ls /usr/share'`
+      } | sudo -S salt '${saltIds}' cmd.run '${cmd}'`
     );
 
     const ranAt = new Date();
