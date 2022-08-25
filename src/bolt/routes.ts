@@ -35,7 +35,7 @@ router.get("/minions/all", [auth, admin], getAllMinions);
 router.get("/minions/unassigned", [auth, admin], getUnassignedMinions);
 router.get("/minions/:id", [auth, admin], getMinionById);
 router.get("/minions/getBySaltId/:saltId", [auth, admin], getMinionBySaltId);
-router.put("/minions/add-user/:minionId", [auth, admin], addUserToMinion);
+router.put("/minions/add-user/:id", [auth, admin], addUserToMinion);
 
 // Scan
 router.get("/scans/all", getAllScans);

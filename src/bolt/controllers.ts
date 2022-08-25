@@ -381,39 +381,37 @@ const createMinion = async (
 };
 
 const addUserToMinion = async (
-  req: Request<{ minionId: string }, any, { userId: string }>,
+  req: Request<{ id: string }, any, { email: string }>,
   res: Response
 ) => {
   try {
-    const [{ data, error }, { data: userData, error: userError }] =
-      await Promise.all([
-        supabaseClient
-          .from<IMinionTable>(TablesEnum.MINION)
-          .update({ userId: req.body.userId })
-          .eq("id", req.params.minionId),
-        supabaseClient
-          .from<IUserTable>("user")
-          .update({ minionId: req.params.minionId })
-          .eq("id", req.body.userId),
-      ]);
+    const { data: userData, error: userError } = await supabaseClient
+      .from<IUserTable>("user")
+      .update({ minionId: req.params.id })
+      .eq("email", req.body.email);
 
-    if (error || !data)
-      throw new APIError(
-        error?.message ||
-          `Could not add user ${req.body.userId} to minion with id ${req.params.minionId}`,
-        ErrorCodes.BAD_REQUEST
-      );
-
-    if (userError || !userData)
+    if (!userData || userError) {
       throw new APIError(
         userError?.message ||
-          `Could not add user ${req.body.userId} to minion with id ${req.params.minionId}`,
+          `Could not add user ${req.body.email} to minion with id ${req.params.id}`,
         ErrorCodes.BAD_REQUEST
       );
+    }
 
+    const { data: minionData, error: minionError } = await supabaseClient
+      .from<IMinionTable>(TablesEnum.MINION)
+      .update({ userId: userData[0].id })
+      .eq("id", req.params.id);
+
+    if (minionError || !minionData)
+      throw new APIError(
+        minionError?.message ||
+          `Could not add user ${req.body.email} to minion with id ${req.params.id}`,
+        ErrorCodes.BAD_REQUEST
+      );
     return res.status(200).json({
       status: 200,
-      data: data[0],
+      data: minionData[0],
     });
   } catch (error: any) {
     if (error instanceof APIError) {
