@@ -8,18 +8,20 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import config from "../config";
 import { uuid } from "uuidv4";
-import { TablesEnum } from "../global.enum";
+import { FlagEnum, MinionIdentityEnum, TablesEnum } from "../global.enum";
 import {
   IMinionTable,
   IUserTable,
   IScanMinionSoftwaresTable,
   IScanTable,
+  ISoftwaresTable,
 } from "./database/db.interface";
-import { ChangePasswordDTO } from "./dto";
+import { ChangePasswordDTO, TGetSoftwaresQuery } from "./dto";
 import { IScanInfo } from "./bolt.interface";
 import { getTotalSoftwareCount } from "./utils/getTotalSoftwareCount";
 import { scanInfoGroupByUser } from "./utils/scanInfoGroupBy";
 import { flatObj } from "./utils/flatObj";
+import { TRequestBody } from "../utils.types";
 
 // ------ User -------
 const createUser = async (
@@ -664,6 +666,73 @@ const getScanInfo = async (req: Request, res: Response) => {
   }
 };
 
+// -- Softwares --
+const getAllSoftwares = async (
+  req: TRequestBody<TGetSoftwaresQuery>,
+  res: Response
+) => {
+  try {
+    let minionIds: string[] = [];
+
+    if (
+      req.body.minions &&
+      req.body.minions.length > 0 &&
+      req.body.minionIdentity
+    ) {
+      minionIds =
+        req.body.minionIdentity === MinionIdentityEnum.SALT_ID
+          ? ((await supabaseClient
+              .from<IMinionTable>(TablesEnum.MINION)
+              .select("id")
+              .in("saltId", req.body.minions)) as unknown as string[])
+          : req.body.minions;
+    } else if (!req.body.minions || req.body.minions.length === 0) {
+      minionIds = (await supabaseClient
+        .from<IMinionTable>(TablesEnum.MINION)
+        .select("id")) as unknown as string[];
+    } else {
+      throw new APIError(
+        `'minionIdentity' is required if minions is provided`,
+        ErrorCodes.NOT_FOUND
+      );
+    }
+
+    const { data, error } = await (req.body.flag === "all"
+      ? supabaseClient
+          .from<ISoftwaresTable>(TablesEnum.SOFTWARES)
+          .select()
+          .in("minion_id", minionIds)
+      : supabaseClient
+          .from<ISoftwaresTable>(TablesEnum.SOFTWARES)
+          .select()
+          .in("minion_id", minionIds)
+          .eq("flag", req.body.flag));
+
+    if (error || !data)
+      throw new APIError(
+        error?.message || `Could not find minions`,
+        ErrorCodes.NOT_FOUND
+      );
+
+    return res.status(200).json({
+      status: 200,
+      data,
+    });
+  } catch (error: any) {
+    if (error instanceof APIError) {
+      return res.status(error.statusCode).json({
+        status: error.statusCode,
+        message: error.errorMessage,
+      });
+    } else {
+      return res.status(500).json({
+        status: 500,
+        message: error.message ?? "Something went wrong",
+      });
+    }
+  }
+};
+
 export {
   createUser,
   createMinion,
@@ -680,4 +749,5 @@ export {
   getAllScans,
   getScanInfo,
   getLatestScan,
+  getAllSoftwares,
 };
