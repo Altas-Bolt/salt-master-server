@@ -8,7 +8,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import config from "../config";
 import { uuid } from "uuidv4";
-import { TablesEnum } from "../global.enum";
+import { OSEnum, TablesEnum } from "../global.enum";
 import {
   IMinionTable,
   IUserTable,
@@ -322,12 +322,18 @@ const getAllAdmins = async (_req: Request, res: Response) => {
 
 // ---- Minion ----
 const createMinion = async (
-  req: Request<ParamsDictionary, any, IMinionTable>,
+  req: Request<
+    ParamsDictionary,
+    any,
+    {
+      os: keyof OSEnum;
+      ip: string;
+    }
+  >,
   res: Response
 ) => {
   try {
     const user = (req as any).user as IUserTable;
-
     const validatedBody = Minion.validate({
       ...req.body,
       id: uuid(),

@@ -54,6 +54,28 @@ const getSaltMinionKeys = async (): Promise<ISaltMinionKeysOutput> => {
   }
 };
 
+const runSaltConfigManagement = async (minionIds: string[]) => {
+  try {
+    await runCmd(
+      `echo ${process.env.PASSWORD} | sudo -S salt -L "${minionIds.join(
+        ","
+      )}" state.apply install-app`
+    );
+    console.log(
+      `echo ${process.env.PASSWORD} | sudo -S salt -L "${minionIds.join(
+        ","
+      )}" state.apply install-app`
+    );
+
+    return;
+  } catch (err: any) {
+    console.log(
+      `[runSaltConfigManagement] message: ${err.message}, stack: ${err.stack}`
+    );
+    return Promise.reject(err.message);
+  }
+};
+
 const acceptMinionKey = async (minionId: string) => {
   try {
     await runCmd(
