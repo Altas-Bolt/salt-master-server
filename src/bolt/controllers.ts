@@ -16,6 +16,9 @@ import {
   IScanTable,
 } from "./database/db.interface";
 import { ChangePasswordDTO } from "./dto";
+import { IScanInfo } from "./bolt.interface";
+import { getTotalSoftwareCount } from "./utils/getTotalSoftwareCount";
+import { scanInfoGroupByUser } from "./utils/scanInfoGroupBy";
 
 // ------ User -------
 const createUser = async (
@@ -584,18 +587,12 @@ const getAllScans = async (_req: Request, res: Response) => {
 
 const getScanInfo = async (req: Request, res: Response) => {
   try {
-    const { data, error } = req.body.minionId
-      ? await supabaseClient
-          .from<IScanMinionSoftwaresTable>(TablesEnum.SCAN_MINION_SOFTWARES)
-          .select(`id, flag, software:software_id (id, name, flag)`)
-          .eq("scan_id", req.body.scanId.trim())
-          .eq("minion_id", req.body.minionId.trim())
-      : await supabaseClient
-          .from<IScanMinionSoftwaresTable>(TablesEnum.SCAN_MINION_SOFTWARES)
-          .select(
-            `id, flag, software:software_id (id, name, flag), minion:minion_id (id, saltId)`
-          )
-          .eq("scan_id", req.body.scanId.trim());
+    const { data, error } = await supabaseClient
+      .from<IScanMinionSoftwaresTable>(TablesEnum.SCAN_MINION_SOFTWARES)
+      .select(
+        `id, flag, minion_id, software:software_id (id, name, flag), minion:minion_id (id, saltId, os, user:userId (id, email, role) )`
+      )
+      .eq("scan_id", req.body.scanId.trim());
 
     if (error || !data)
       throw new APIError(
@@ -604,9 +601,17 @@ const getScanInfo = async (req: Request, res: Response) => {
         ErrorCodes.NOT_FOUND
       );
 
+    const result: Record<string, any> = {};
+
+    result.count = getTotalSoftwareCount(data as unknown as IScanInfo[]);
+    result.data =
+      req.body.groupBy === "employee"
+        ? scanInfoGroupByUser(data as unknown as IScanInfo[])
+        : data;
+
     return res.status(200).json({
       status: 200,
-      data: data,
+      data: result,
     });
   } catch (error: any) {
     if (error instanceof APIError) {
