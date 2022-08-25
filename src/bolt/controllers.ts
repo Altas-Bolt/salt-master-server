@@ -745,6 +745,43 @@ const getAllSoftwares = async (
   }
 };
 
+// const getApplicationList = async (
+//   req: TRequestQuery<{ limit: string }>,
+//   res: Response
+// ) => {
+//   try {
+
+//     const { data, error } = await supabaseClient
+//       .from<IScanTable>(TablesEnum.SCAN)
+//       .select()
+//       .order("ran_at", { ascending: false })
+//       .limit(limit);
+
+//     if (error || !data)
+//       throw new APIError(
+//         error?.message || `Could not find scans in DB`,
+//         ErrorCodes.NOT_FOUND
+//       );
+
+//     return res.status(200).json({
+//       status: 200,
+//       data: limit > 1 ? data : data[0],
+//     });
+//   } catch (error: any) {
+//     if (error instanceof APIError) {
+//       return res.status(error.statusCode).json({
+//         status: error.statusCode,
+//         message: error.errorMessage,
+//       });
+//     } else {
+//       return res.status(500).json({
+//         status: 500,
+//         message: error.message ?? "Something went wrong",
+//       });
+//     }
+//   }
+// };
+
 export {
   createUser,
   createMinion,
