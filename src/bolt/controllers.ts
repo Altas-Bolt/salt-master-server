@@ -21,7 +21,7 @@ import { IScanInfo } from "./bolt.interface";
 import { getTotalSoftwareCount } from "./utils/getTotalSoftwareCount";
 import { scanInfoGroupByUser } from "./utils/scanInfoGroupBy";
 import { flatObj } from "./utils/flatObj";
-import { TRequestBody } from "../utils.types";
+import { TRequestBody, TRequestQuery } from "../utils.types";
 import { getOrThrowQuery } from "./utils/getOrThrowQuery";
 
 // ------ User -------
@@ -589,13 +589,18 @@ const getAllScans = async (_req: Request, res: Response) => {
   }
 };
 
-const getLatestScan = async (_req: Request, res: Response) => {
+const getLatestScan = async (
+  req: TRequestQuery<{ limit: string }>,
+  res: Response
+) => {
   try {
+    const limit = parseInt(req.query.limit);
+
     const { data, error } = await supabaseClient
       .from<IScanTable>(TablesEnum.SCAN)
       .select()
       .order("ran_at", { ascending: false })
-      .limit(1);
+      .limit(limit);
 
     if (error || !data)
       throw new APIError(
@@ -605,7 +610,7 @@ const getLatestScan = async (_req: Request, res: Response) => {
 
     return res.status(200).json({
       status: 200,
-      data: data[0],
+      data: limit > 1 ? data : data[0],
     });
   } catch (error: any) {
     if (error instanceof APIError) {

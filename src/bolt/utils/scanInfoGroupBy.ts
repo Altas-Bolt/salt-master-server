@@ -52,8 +52,12 @@ export const scanInfoGroupByUser = (scanInfo: IScanInfo[]) => {
     }
   });
 
-  return Object.keys(minionIdToSoftwares).map((minionId) => ({
+  const result = Object.keys(minionIdToSoftwares).map((minionId) => ({
     minion_id: minionId,
     ...minionIdToSoftwares[minionId],
   }));
+
+  console.log({ result });
+
+  return result;
 };
