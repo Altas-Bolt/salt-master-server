@@ -632,7 +632,7 @@ const getScanInfo = async (req: Request, res: Response) => {
     const { data, error } = await supabaseClient
       .from<IScanMinionSoftwaresTable>(TablesEnum.SCAN_MINION_SOFTWARES)
       .select(
-        `id, flag, minion_id, software:software_id (id, name, flag), minion:minion_id (id, saltId, os, user:userId (id, email, role) )`
+        `id, flag, minion_id, software:software_id (id, name, flag), minion:minion_id (id, saltId, os, ip, user:userId (id, email, role) )`
       )
       .eq("scan_id", req.body.scanId.trim());
 
@@ -644,7 +644,6 @@ const getScanInfo = async (req: Request, res: Response) => {
       );
 
     const result: Record<string, any> = {};
-    console.log(data);
 
     result.count = getTotalSoftwareCount(data as unknown as IScanInfo[]);
     result.data =

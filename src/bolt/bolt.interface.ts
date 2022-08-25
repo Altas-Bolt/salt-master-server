@@ -13,6 +13,7 @@ export interface IScanInfo {
     id: string;
     saltId: string;
     os: OSEnum;
+    ip: string;
     user: {
       id: string;
       email: string;
