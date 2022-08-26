@@ -44,6 +44,7 @@ export const scanInfoGroupByUser = (scanInfo: IScanInfo[]) => {
         minion: {
           id: scanEntry.minion_id,
           saltId: scanEntry.minion.saltId,
+          ip: scanEntry.minion.ip,
         },
         os: scanEntry.minion.os,
         softwareCount,

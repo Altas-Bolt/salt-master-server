@@ -36,6 +36,7 @@ export interface IMinionInfoForScan {
   minion: {
     id: string;
     saltId: string;
+    ip: string;
   };
   softwareCount: ISoftwareCount;
   softwares: {
