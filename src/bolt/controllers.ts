@@ -9,10 +9,11 @@ import bcrypt from "bcrypt";
 import config from "../config";
 import { uuid } from "uuidv4";
 import {
+  BlacklistedTypeSoftwareNotificationResolutionsEnum,
   FlagEnum,
   MinionIdentityEnum,
+  NewTypeSoftwareNotificationResolutionsEnum,
   OSEnum,
-  SoftwareNotificationResolutionsEnum,
   TablesEnum,
 } from "../global.enum";
 import {
@@ -880,7 +881,9 @@ const resolveNotification = async (
     id: string;
     resolvedBy: string;
     terminalState: FlagEnum.BLACKLISTED | FlagEnum.WHITELISTED;
-    resolution: SoftwareNotificationResolutionsEnum;
+    resolution:
+      | NewTypeSoftwareNotificationResolutionsEnum
+      | BlacklistedTypeSoftwareNotificationResolutionsEnum;
   }>,
   res: Response
 ) => {

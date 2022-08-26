@@ -4,9 +4,8 @@ import { promisify } from "util";
 const runCmd = async (cmd: string) => {
   try {
     const promisifiedExec = promisify(exec);
-    const { stdout } = await promisifiedExec(cmd, {
-      cwd: "/srv/salt/",
-    });
+    const { stdout } = await promisifiedExec(cmd);
+    console.log("[runCmd: stdout]", stdout);
 
     return stdout;
   } catch (error) {

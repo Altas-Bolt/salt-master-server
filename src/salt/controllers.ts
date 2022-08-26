@@ -27,10 +27,14 @@ import {
 } from "./utils/saltKeyHelpers";
 import { getAllMinions } from "./utils/getAllMinions";
 import { TRequestBody } from "../utils.types";
-import { IMinionTable } from "bolt/database/db.interface";
+import {
+  IMinionTable,
+  ISoftwareNotifications,
+} from "../bolt/database/db.interface";
 import supabaseClient from "../bolt/database/init";
 import { updateScan } from "./utils/updateScan";
 import { bulkInsertSoftwareNotifications } from "./utils/bulkInsertSoftwareNotifications";
+import { uninstall } from "../bolt/utils/saltSoftware";
 
 const scan = async (
   req: TRequestBody<{ os: OSEnum; saltIds?: string[]; ranBy?: string }>,
@@ -87,6 +91,7 @@ const scan = async (
       for (const softwareName of trackedSoftwaresName) {
         let softwareId: string | null = null;
         let flag: FlagEnum = FlagEnum.UNDECIDED;
+        let softwareExists = true;
 
         if (minionSoftwareMap.softwares[softwareName]) {
           softwareId = minionSoftwareMap.softwares[softwareName].id;
@@ -100,11 +105,13 @@ const scan = async (
 
           softwareId = id;
           flag = newFlag;
+          softwareExists = false;
         }
 
         if (flag === FlagEnum.WHITELISTED) {
           softwareCountInScan.whitelisted++;
         } else if (flag === FlagEnum.BLACKLISTED) {
+          uninstall(minion.saltId, os, softwareName);
           createNotifications.push({
             software_id: softwareId,
             type: SoftwareNotificationTypesEnum.BLACKLISTED,
@@ -113,12 +120,38 @@ const scan = async (
           });
           softwareCountInScan.blacklisted++;
         } else {
-          createNotifications.push({
-            software_id: softwareId,
-            type: SoftwareNotificationTypesEnum.NEW,
-            scan_id: newScan.id,
-            minion_id: minion.id,
-          });
+          if (softwareExists) {
+            const {
+              data: existingNotification,
+              error: errorInGettingExistingNotification,
+            } = await supabaseClient
+              .from<ISoftwareNotifications>(TablesEnum.SOFTWARE_NOTIFICATIONS)
+              .select()
+              .eq("id", softwareId);
+
+            if (errorInGettingExistingNotification) {
+              return Promise.reject(
+                errorInGettingExistingNotification?.message ||
+                  "Error in finding existing notification"
+              );
+            }
+
+            if (!existingNotification || existingNotification.length === 0) {
+              createNotifications.push({
+                software_id: softwareId,
+                type: SoftwareNotificationTypesEnum.NEW,
+                scan_id: newScan.id,
+                minion_id: minion.id,
+              });
+            }
+          } else {
+            createNotifications.push({
+              software_id: softwareId,
+              type: SoftwareNotificationTypesEnum.NEW,
+              scan_id: newScan.id,
+              minion_id: minion.id,
+            });
+          }
           softwareCountInScan.undecided++;
         }
 
