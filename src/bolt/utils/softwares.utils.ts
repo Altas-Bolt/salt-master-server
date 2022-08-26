@@ -9,8 +9,9 @@ export const markSoftwareToTerminalState = async (
   const { data, error } = await supabase
     .from<ISoftwaresTable>(TablesEnum.SOFTWARES)
     .update({ flag: terminalState })
-    .eq("id", softwareId.trim())
-    .eq("flag", FlagEnum.UNDECIDED);
+    .eq("id", softwareId.trim());
+
+  console.log("f", error, data);
 
   if (error || !data || data.length === 0) {
     return Promise.reject(error || "Failed to update software flag");
