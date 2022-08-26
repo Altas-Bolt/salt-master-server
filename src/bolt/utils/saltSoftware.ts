@@ -6,27 +6,27 @@ export const uninstall = async (
   os: OSEnum,
   softwareName: string
 ) => {
-  const linuxCmd = `apt purge ${softwareName} -y && apt clean -y`;
-  const windowsCmd = ``; // TODO
+  const linuxCmd = `apt purge ${softwareName.trim()} -y && apt clean -y`;
+  const windowsCmd = `wmic product where name='${softwareName.trim()}' uninstall`;
 
   const cmd = os === OSEnum.LINUX ? linuxCmd : windowsCmd;
 
   await runCmd(
     `echo ${
       process.env.PASSWORD || ""
-    } | sudo -S salt '${saltId}' cmd.run '${cmd}'`
+    } | sudo -S salt '${saltId}' cmd.run '${cmd}' -t 60`
   );
 };
 
 export const logoff = async (saltId: string, os: OSEnum) => {
   const linuxCmd = `poweroff`;
-  const windowsCmd = ``; // TODO
+  const windowsCmd = `shutdown -f`;
 
   const cmd = os === OSEnum.LINUX ? linuxCmd : windowsCmd;
 
   await runCmd(
     `echo ${
       process.env.PASSWORD || ""
-    } | sudo -S salt '${saltId}' cmd.run '${cmd}'`
+    } | sudo -S salt '${saltId}' cmd.run '${cmd}' -t 60`
   );
 };

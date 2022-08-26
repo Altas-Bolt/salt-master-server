@@ -47,13 +47,13 @@ const scan = async (
     const cmd =
       req.body.os.trim() === OSEnum.LINUX
         ? "node /etc/bolt/getApps.js"
-        : "./path/to/exe/file";
+        : "wmic product get name";
     const os = req.body.os;
 
     const output = await runCmd(
       `echo ${
         process.env.PASSWORD || ""
-      } | sudo -S salt '${saltIds}' cmd.run '${cmd}'`
+      } | sudo -S salt '${saltIds}' cmd.run '${cmd}' -t 60`
     );
 
     const ranAt = new Date();
