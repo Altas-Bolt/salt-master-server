@@ -120,38 +120,12 @@ const scan = async (
           });
           softwareCountInScan.blacklisted++;
         } else {
-          if (softwareExists) {
-            const {
-              data: existingNotification,
-              error: errorInGettingExistingNotification,
-            } = await supabaseClient
-              .from<ISoftwareNotifications>(TablesEnum.SOFTWARE_NOTIFICATIONS)
-              .select()
-              .eq("id", softwareId);
-
-            if (errorInGettingExistingNotification) {
-              return Promise.reject(
-                errorInGettingExistingNotification?.message ||
-                  "Error in finding existing notification"
-              );
-            }
-
-            if (!existingNotification || existingNotification.length === 0) {
-              createNotifications.push({
-                software_id: softwareId,
-                type: SoftwareNotificationTypesEnum.NEW,
-                scan_id: newScan.id,
-                minion_id: minion.id,
-              });
-            }
-          } else {
-            createNotifications.push({
-              software_id: softwareId,
-              type: SoftwareNotificationTypesEnum.NEW,
-              scan_id: newScan.id,
-              minion_id: minion.id,
-            });
-          }
+          createNotifications.push({
+            software_id: softwareId,
+            type: SoftwareNotificationTypesEnum.NEW,
+            scan_id: newScan.id,
+            minion_id: minion.id,
+          });
           softwareCountInScan.undecided++;
         }
 

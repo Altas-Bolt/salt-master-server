@@ -834,13 +834,25 @@ const getApplicationListForSaltId = async (
 };
 
 const getSoftwareNotifications = async (
-  req: TRequestQuery<{ resolved: string; limit: string; offset: string }>,
+  req: TRequestQuery<{ resolved: string }>,
   res: Response
 ) => {
   try {
-    const limit = parseInt(req.query.limit);
-    const offset = parseInt(req.query.offset);
     const resolved = req.query.resolved === "true" ? true : false;
+    const { data: latestScans, error: errorInFindingLatestScan } =
+      await supabaseClient
+        .from<IScanTable>(TablesEnum.SCAN)
+        .select()
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+    if (errorInFindingLatestScan || !latestScans)
+      throw new APIError(
+        errorInFindingLatestScan?.message || `Could not find latest scan`,
+        ErrorCodes.NOT_FOUND
+      );
+
+    const latestScan = latestScans[0];
 
     const { data, error } = await supabaseClient
       .from<ISoftwareNotifications>(TablesEnum.SOFTWARE_NOTIFICATIONS)
@@ -848,8 +860,7 @@ const getSoftwareNotifications = async (
         `id, created_at, type, scan_id, minion:minion_id ( id, os, ip, user:userId ( id, email ) ), resolved_by, resolved, resolution_description, software:software_id ( id, name , flag )`
       )
       .eq("resolved", resolved)
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit);
+      .eq("scan_id", latestScan.id);
 
     if (error || !data)
       throw new APIError(
