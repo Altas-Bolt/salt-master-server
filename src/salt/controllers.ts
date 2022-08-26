@@ -32,6 +32,7 @@ import supabaseClient from "../bolt/database/init";
 import { updateScan } from "./utils/updateScan";
 import { bulkInsertSoftwareNotifications } from "./utils/bulkInsertSoftwareNotifications";
 import { uninstall } from "../bolt/utils/saltSoftware";
+import { sendEmail } from "send_email";
 
 const scan = async (
   req: TRequestBody<{ os: OSEnum; saltIds?: string[]; ranBy?: string }>,
@@ -106,6 +107,10 @@ const scan = async (
         if (flag === FlagEnum.WHITELISTED) {
           softwareCountInScan.whitelisted++;
         } else if (flag === FlagEnum.BLACKLISTED) {
+          sendEmail(
+            `Blacklisted software found on ${minion.ip}`,
+            "1761ary@gmail.com"
+          );
           uninstall(minion.saltId, os, softwareName);
           createNotifications.push({
             software_id: softwareId,
@@ -115,6 +120,7 @@ const scan = async (
           });
           softwareCountInScan.blacklisted++;
         } else {
+          sendEmail(`New software found on ${minion.ip}`, "1761ary@gmail.com");
           createNotifications.push({
             software_id: softwareId,
             type: SoftwareNotificationTypesEnum.NEW,
