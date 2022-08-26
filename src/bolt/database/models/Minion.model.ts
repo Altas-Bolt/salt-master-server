@@ -1,14 +1,14 @@
 import Joi from "joi";
+import { customAlphabet } from "nanoid";
 import { IMinionTable } from "../db.interface";
-import shortid from "shortid";
+const nanoid = customAlphabet("1234567890abcdefghijklmnopqrstuvwxyz", 10);
 
 const Minion = Joi.object<IMinionTable>({
   id: Joi.string().required(),
   os: Joi.string().required(),
   saltId: Joi.string().default(
     Joi.ref("os", {
-      adjust: (os) =>
-        `${os}-${shortid.characters("123456789abcdefghijklmnopqrstuvwxyz")}`,
+      adjust: (os) => `${os}-${nanoid(5)}`,
     })
   ),
   // saltId:Joi.string().required() ,
