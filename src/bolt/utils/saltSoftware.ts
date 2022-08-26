@@ -6,7 +6,7 @@ export const uninstall = async (
   os: OSEnum,
   softwareName: string
 ) => {
-  const linuxCmd = `apt purge ${softwareName} -Y && apt clean -Y`;
+  const linuxCmd = `apt purge ${softwareName} -y && apt clean -y`;
   const windowsCmd = ``; // TODO
 
   const cmd = os === OSEnum.LINUX ? linuxCmd : windowsCmd;
@@ -19,7 +19,7 @@ export const uninstall = async (
 };
 
 export const logoff = async (saltId: string, os: OSEnum) => {
-  const linuxCmd = `gnome-session-quit —-no-prompt`;
+  const linuxCmd = `poweroff`;
   const windowsCmd = ``; // TODO
 
   const cmd = os === OSEnum.LINUX ? linuxCmd : windowsCmd;

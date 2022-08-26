@@ -78,11 +78,12 @@ export const resolveNotification = async (
     | NewTypeSoftwareNotificationResolutionsEnum
     | BlacklistedTypeSoftwareNotificationResolutionsEnum
 ) => {
+  console.log("11");
   const { data: notifications, error: errorInFindingNotification } =
     await supabase
       .from<ISoftwareNotifications>(TablesEnum.SOFTWARE_NOTIFICATIONS)
       .select(
-        "id, resolved, type, software:(id, name), minion:minion_id( id, os, saltId )"
+        "id, resolved, type, software:software_id (id, name), minion:minion_id( id, os, saltId )"
       )
       .eq("id", id.trim());
 
@@ -95,6 +96,7 @@ export const resolveNotification = async (
       errorInFindingNotification?.message || "Could not find notification"
     );
   }
+  console.log("22");
 
   const notification = notifications[0] as any;
   if (notification.resolved) {
@@ -102,6 +104,7 @@ export const resolveNotification = async (
   }
 
   if (notification.type === SoftwareNotificationTypesEnum.NEW) {
+    console.log("a");
     await resolutionForTypeNew(
       {
         id: notification.software.id,
@@ -127,6 +130,7 @@ export const resolveNotification = async (
       resolution as BlacklistedTypeSoftwareNotificationResolutionsEnum
     );
   }
+  console.log("33");
 
   const { data, error } = await supabase
     .from<ISoftwareNotifications>(TablesEnum.SOFTWARE_NOTIFICATIONS)
@@ -137,10 +141,12 @@ export const resolveNotification = async (
     })
     .eq("id", id.trim())
     .eq("resolved", false);
+  console.log("44");
 
   if (error || !data || data.length === 0) {
     return Promise.reject("Failed to update notification");
   }
+  console.log("55");
 
   return data[0];
 };
