@@ -32,6 +32,7 @@ import { flatObj } from "./utils/flatObj";
 import { TRequestBody, TRequestQuery } from "../utils.types";
 import { getOrThrowQuery } from "./utils/getOrThrowQuery";
 import { resolveNotification as resolveNotificationHelper } from "./utils/softwareNotification.utils";
+import { groupBySoftware } from "./utils/groupBySoftware";
 
 // ------ User -------
 const createUser = async (
@@ -656,6 +657,8 @@ const getScanInfo = async (req: Request, res: Response) => {
         ErrorCodes.NOT_FOUND
       );
 
+    console.log({ body: req.body, data });
+
     const result: Record<string, any> = {};
 
     result.count = getTotalSoftwareCount(data as unknown as IScanInfo[]);
@@ -664,6 +667,8 @@ const getScanInfo = async (req: Request, res: Response) => {
         ? scanInfoGroupByUser(data as unknown as IScanInfo[]).map((obj) =>
             flatObj(obj)
           )
+        : req.body.groupBy === "software_name"
+        ? Object.values(groupBySoftware(data as unknown as IScanInfo[]))
         : data.map((obj) => flatObj(obj));
 
     return res.status(200).json({

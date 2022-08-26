@@ -27,10 +27,7 @@ import {
 } from "./utils/saltKeyHelpers";
 import { getAllMinions } from "./utils/getAllMinions";
 import { TRequestBody } from "../utils.types";
-import {
-  IMinionTable,
-  ISoftwareNotifications,
-} from "../bolt/database/db.interface";
+import { IMinionTable } from "../bolt/database/db.interface";
 import supabaseClient from "../bolt/database/init";
 import { updateScan } from "./utils/updateScan";
 import { bulkInsertSoftwareNotifications } from "./utils/bulkInsertSoftwareNotifications";
@@ -91,7 +88,6 @@ const scan = async (
       for (const softwareName of trackedSoftwaresName) {
         let softwareId: string | null = null;
         let flag: FlagEnum = FlagEnum.UNDECIDED;
-        let softwareExists = true;
 
         if (minionSoftwareMap.softwares[softwareName]) {
           softwareId = minionSoftwareMap.softwares[softwareName].id;
@@ -105,7 +101,6 @@ const scan = async (
 
           softwareId = id;
           flag = newFlag;
-          softwareExists = false;
         }
 
         if (flag === FlagEnum.WHITELISTED) {
